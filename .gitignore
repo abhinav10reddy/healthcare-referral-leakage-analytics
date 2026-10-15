@@ -1,0 +1,36 @@
+# Python virtual environment
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# pytest
+.pytest_cache/
+
+# Generated data (folder placeholders stay tracked)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/output/*
+!data/output/.gitkeep
+
+# SQLite databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+
+# Office and Power BI lock files (for example ~$report.xlsx, ~$dashboard.pbix)
+~$*
+
+# Power BI project local cache and settings
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
