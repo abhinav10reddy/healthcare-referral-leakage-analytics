@@ -41,7 +41,7 @@ service categories, facilities and patient segments. The project uses Python, Pa
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Project setup and deterministic synthetic-data generator | Complete |
-| 2 | Data cleaning, validation and SQLite pipeline | Planned |
+| 2 | Data cleaning, validation and SQLite pipeline | Complete |
 | 3 | Referral-leakage rules, SQL analytics and KPI reconciliation | Planned |
 | 4 | Power BI data package, DAX measures, theme, build guide and dashboard | Planned |
 | 5 | Final testing, screenshots, documentation and GitHub QA | Planned |
@@ -178,43 +178,215 @@ All files are written to `data\raw` as UTF-8 CSV with `\n` line endings. Dates u
 | `booked_date`, `appointment_datetime` | When it was booked and when it was planned to take place |
 | `appointment_status`, `status_reason` | Outcome, plus the reason for cancellations and reschedules |
 
+## Data preparation (Phase 2)
+
+Phase 2 validates the raw files, cleans the controlled data-quality issues, and builds a
+SQLite database for analysis. Run it after generating the raw data:
+
+```powershell
+.\.venv\Scripts\python.exe prepare_data.py
+```
+
+If the raw files are missing, the script stops and shows the generation command. The
+`--raw-dir`, `--processed-dir` and `--output-dir` options change the input and output
+folders. They default to `data\raw`, `data\processed` and `data\output`.
+
+The pipeline works in this order:
+
+1. **Load:** read the six raw CSVs as text and enforce a strict schema. A missing column
+   or an unexpected extra column stops the run.
+2. **Standardize:** trim whitespace, treat blank text as missing, and normalize dates to
+   `YYYY-MM-DD` and date-times to `YYYY-MM-DD HH:MM:SS`. Raw dates may use `-` or `/`;
+   any other date format is rejected.
+3. **Validate:** run 35 structural checks covering:
+   - required values, identifier formats and unique keys;
+   - the duplicate design (at most two identical rows per referral ID);
+   - foreign keys and provider–facility–service consistency;
+   - allowed category values and numeric ranges;
+   - reporting-year and extract-date limits, date ordering and appointment journeys;
+   - status and closure consistency.
+
+   Any failure is a **fatal structural error**. The run stops, exits with code 1, and
+   writes a failed JSON report. The previous successful CSVs and database are left
+   unchanged.
+4. **Clean:** apply the rules below and record every controlled issue as an exception.
+5. **Publish:** build all outputs in a temporary folder inside `data\output`, create the
+   database from `sql\01_create_schema.sql`, and check foreign keys and row counts.
+   Only then are the outputs moved into place.
+
+### Cleaning rules
+
+| Issue | Rule | Exception status |
+| --- | --- | --- |
+| Leading or trailing whitespace | Trimmed | Resolved |
+| Non-ISO date format (e.g. `2025/03/05`) | Normalized to ISO | Resolved |
+| Duplicate referral ID | Keep the row with the smallest `referral_record_id`; log each removed row | Resolved |
+| Blank referral source | Replaced with `Unknown` | Unresolved (true source unknown) |
+| Blank receiving facility | Inferred from the receiving provider's facility when it is unambiguous; otherwise left blank | Resolved, or Unresolved if not inferred |
+| Blank first-contact date where an appointment or decline proves contact | Kept blank; no date is invented | Unresolved |
+| Closure reason without a closed date | Kept blank; closure reason retained | Unresolved |
+| Open referral (`Pending`/`Scheduled`) with a closed date | Closed date cleared | Resolved |
+
+Some blanks are part of the design and are kept without being flagged:
+- patients who were never contacted;
+- open referrals with no closure details;
+- `status_reason` on appointments that were not cancelled or rescheduled.
+
+### Data-quality exceptions
+
+`data_quality_exceptions.csv` has one row per detected issue, with these columns:
+
+| Column | Description |
+| --- | --- |
+| `exception_id` | Stable ID (`DQE0000001`, ...) |
+| `entity_type` | Kind of record the issue was found on |
+| `record_id` | Raw row identifier (for referrals, the `referral_record_id`) |
+| `referral_id` | Related referral ID |
+| `issue_type` | What was wrong |
+| `field_name` | Affected field |
+| `original_value` | Value before cleaning |
+| `cleaned_value` | Value after cleaning |
+| `action_taken` | Cleaning action applied |
+| `resolution_status` | `Resolved` or `Unresolved` |
+
+Processed referrals carry three summary fields:
+- `duplicate_record_count`: duplicate rows removed for that referral;
+- `data_quality_issue_count`: number of exceptions linked to the referral;
+- `has_data_quality_issue`: 1 if the referral has any exceptions, otherwise 0.
+
+These support data-quality analysis in Power BI later. Phase 2 does not add leakage flags
+or KPIs; those are defined in Phase 3.
+
+### Phase 2 outputs (default run)
+
+| Output | Rows | Description |
+| --- | --- | --- |
+| `data\processed\service_categories.csv` | 8 | Validated master data |
+| `data\processed\facilities.csv` | 12 | Validated master data |
+| `data\processed\providers.csv` | 132 | Validated master data |
+| `data\processed\patients.csv` | 60,000 | Validated master data |
+| `data\processed\referrals.csv` | 147,750 | One row per unique referral ID; raw columns plus the three data-quality fields |
+| `data\processed\appointments.csv` | 128,718 | Validated appointments plus a derived `appointment_date` |
+| `data\processed\data_quality_exceptions.csv` | 11,116 | One row per detected data-quality issue |
+| `data\output\healthcare_referrals.db` | 7 tables | SQLite database with the same seven tables |
+| `data\output\phase2_data_quality.json` | — | Validation and data-quality report |
+
+The default run removes 2,250 duplicate rows. It records these exceptions:
+
+| Exception | Count |
+| --- | --- |
+| Duplicate referral row removed | 2,250 |
+| Referral source replaced with `Unknown` | 2,955 |
+| Receiving facility inferred from provider | 1,478 |
+| First-contact date kept blank | 2,216 |
+| Closed date kept blank | 1,478 |
+| Closed date cleared on open referral | 739 |
+
+These counts match the generator's configured data-quality targets, and the run reports
+no structural violations.
+
+### SQLite database
+
+- **Schema:** `sql\01_create_schema.sql` drops and recreates the seven tables, so it is
+  safe to rerun.
+- **Keys:** foreign keys are enabled. Every table has a primary key, and the schema adds
+  unique constraints such as `referral_record_id` and (`referral_id`,
+  `appointment_sequence`).
+- **CHECK constraints:** these cover allowed category values, 0/1 flags and date order,
+  and require that open referrals have no closed date after cleaning.
+- **Indexes:** these cover referral date, status, service category, facility, provider,
+  patient, source and urgency, plus appointment referral, status, date, facility and
+  provider.
+- **Types:** identifiers, categories and ISO dates are TEXT; counts and flags are INTEGER.
+- **Post-load checks:** after loading, the pipeline confirms `PRAGMA foreign_key_check`
+  returns no rows, `PRAGMA integrity_check` returns `ok`, and every table's row count
+  matches its processed CSV.
+
+Phase 3 analytical views are not created yet.
+
+### JSON report
+
+`phase2_data_quality.json` contains:
+- the pipeline status;
+- the synthetic-data and non-clinical-use notice;
+- the reporting period and extract date;
+- input and output row counts and duplicate counts;
+- missing values per approved field, before and after cleaning, separating flagged
+  exceptions from legitimate blanks;
+- cleaning actions and exception counts, including unresolved exceptions;
+- a reconciliation against the generator's data-quality targets;
+- every validation check and its result;
+- referral and appointment status counts;
+- database row counts and the foreign-key check result.
+
+The report contains no timestamps or machine-specific paths.
+
+### Deterministic rebuilds
+
+Running `prepare_data.py` again on unchanged raw data produces byte-identical processed
+CSVs and an identical JSON report. The database is rebuilt from scratch with identical
+table contents. Outputs use stable sort orders, UTF-8, `\n` line endings, and empty fields
+for missing values.
+
 ## Testing
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-The tests generate data in temporary folders and do not use files in `data\raw`. They
-check the files and columns, row counts (including a full 150,000-row run), identifier
-uniqueness, duplicate and missing-value rates, foreign keys, provider–facility–service
-consistency, date ranges and ordering, appointment status sequences, deterministic output,
-privacy rules, command-line validation and Git ignore rules.
+The tests generate data in temporary folders and do not use files in `data\raw`.
+
+- **Phase 1 tests** check:
+  - files, columns and row counts, including a full 150,000-row run;
+  - identifier uniqueness, and duplicate and missing-value rates;
+  - foreign keys and provider–facility–service consistency;
+  - date ranges and ordering, and appointment status sequences;
+  - deterministic output, privacy rules, command-line validation and Git ignore rules.
+- **Phase 2 tests** check:
+  - that each kind of structural problem is rejected;
+  - that a failed run writes a failed report and keeps the previous outputs;
+  - every cleaning rule, plus exception IDs and reconciliation with the report;
+  - processed columns and row counts;
+  - SQLite tables, keys, indexes and constraints, and the foreign-key check;
+  - byte-identical reruns;
+  - a full run on the standard 150,000-row dataset.
 
 ## Repository structure
 
 ```
 healthcare-referral-leakage-analytics/
-├── config.py              # Generator settings: period, seed, categories, rates, paths
-├── generate_data.py       # Command-line synthetic data generator
+├── config.py              # Settings: period, seed, categories, rates, paths
+├── generate_data.py       # Phase 1: command-line synthetic data generator
+├── prepare_data.py        # Phase 2: validation, cleaning and SQLite pipeline
 ├── requirements.txt       # Pinned Python dependencies
 ├── data/
 │   ├── raw/               # Generated raw CSV files (ignored by Git)
-│   ├── processed/         # Phase 2 cleaned data (ignored by Git)
-│   └── output/            # Later analytical outputs (ignored by Git)
-├── sql/                   # SQL scripts (Phase 2 onwards)
+│   ├── processed/         # Cleaned CSVs and data-quality exceptions (ignored by Git)
+│   └── output/            # SQLite database and JSON report (ignored by Git)
+├── sql/
+│   └── 01_create_schema.sql  # SQLite schema: tables, keys, checks and indexes
 ├── powerbi/               # Power BI files (Phase 4)
 ├── screenshots/           # Dashboard screenshots (Phase 5)
 └── tests/
     ├── conftest.py
-    └── test_generate_data.py
+    ├── test_generate_data.py
+    └── test_prepare_data.py
 ```
 
 ## Current limitations
 
 - The data is synthetic. Distributions, rates and wait times are illustrative settings
   chosen for analysis practice and do not represent any real healthcare system.
-- Only Phase 1 is complete. Cleaning, the SQLite pipeline, leakage rules, KPIs and the
-  Power BI dashboard are planned for later phases.
+- Phases 1 and 2 are complete. Leakage rules, KPIs, analytical SQL views and the Power BI
+  dashboard are planned for later phases.
+- Phase 2 validation is strict and tailored to this synthetic schema. Unexpected columns,
+  values or date formats stop the run rather than being guessed at.
+- Missing first-contact and closed dates are flagged but never filled in, so time-based
+  measures in later phases must handle these blanks.
+- Outputs are replaced one file at a time after a successful build. If the database file
+  is open in another program, Windows may refuse the replacement; the run then reports a
+  failure.
+- A full Phase 2 run on 150,000 referral records takes about 30 seconds.
 - Byte-identical output is guaranteed only with the same seed and the same Python, NumPy
   and Pandas versions as in `requirements.txt`.
 - Outcomes of out-of-network referrals are simplified: no appointments are recorded, and

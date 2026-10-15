@@ -15,6 +15,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
 OUTPUT_DATA_DIR = PROJECT_ROOT / "data" / "output"
+SQL_DIR = PROJECT_ROOT / "sql"
+
+# Phase 2 outputs (processed CSVs keep the raw file names)
+SCHEMA_SQL_PATH = SQL_DIR / "01_create_schema.sql"
+DATA_QUALITY_EXCEPTIONS_FILE = "data_quality_exceptions.csv"  # in PROCESSED_DATA_DIR
+DATABASE_FILE = "healthcare_referrals.db"                     # in OUTPUT_DATA_DIR
+DATA_QUALITY_REPORT_FILE = "phase2_data_quality.json"         # in OUTPUT_DATA_DIR
 
 # ---------------------------------------------------------------------------
 # Run settings
