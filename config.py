@@ -23,6 +23,25 @@ DATA_QUALITY_EXCEPTIONS_FILE = "data_quality_exceptions.csv"  # in PROCESSED_DAT
 DATABASE_FILE = "healthcare_referrals.db"                     # in OUTPUT_DATA_DIR
 DATA_QUALITY_REPORT_FILE = "phase2_data_quality.json"         # in OUTPUT_DATA_DIR
 
+# Phase 3 analytics (views SQL, exports and summary; exports go to OUTPUT_DATA_DIR)
+ANALYTICS_VIEWS_SQL_PATH = SQL_DIR / "02_create_analytics_views.sql"
+KPI_DEFINITIONS_PATH = SQL_DIR / "KPI_DEFINITIONS.md"
+ANALYTICS_SUMMARY_FILE = "phase3_analytics_summary.json"
+ANALYTICS_EXPORT_FILES = {
+    "vw_referral_journey": "referral_journey.csv",
+    "vw_overall_kpis": "overall_kpis.csv",
+    "vw_referral_funnel": "referral_funnel.csv",
+    "vw_monthly_metrics": "monthly_metrics.csv",
+    "vw_service_category_metrics": "service_category_metrics.csv",
+    "vw_facility_metrics": "facility_metrics.csv",
+    "vw_referral_source_metrics": "referral_source_metrics.csv",
+    "vw_urgency_metrics": "urgency_metrics.csv",
+    "vw_insurance_metrics": "insurance_metrics.csv",
+    "vw_leakage_reason_metrics": "leakage_reason_metrics.csv",
+    "vw_turnaround_metrics": "turnaround_metrics.csv",
+    "vw_data_quality_metrics": "data_quality_metrics.csv",
+}
+
 # ---------------------------------------------------------------------------
 # Run settings
 # ---------------------------------------------------------------------------
@@ -42,6 +61,11 @@ DATA_EXTRACT_DATE = date(2026, 1, 31)
 
 # An unscheduled referral expires this many days after the referral date.
 REFERRAL_EXPIRY_DAYS = 90
+
+# Phase 3 analysis windows (mirrored in vw_analysis_parameters; analyze_data.py
+# checks that both agree).
+FOLLOW_UP_WINDOW_DAYS = 30            # open items younger than this are still "active"
+SCHEDULING_DELAY_THRESHOLD_DAYS = 30  # first booking later than this is "delayed scheduling"
 
 # Referral volume shape: relative weight by month and for weekend days.
 MONTH_WEIGHTS = {

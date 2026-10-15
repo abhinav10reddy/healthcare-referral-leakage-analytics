@@ -42,7 +42,7 @@ service categories, facilities and patient segments. The project uses Python, Pa
 | --- | --- | --- |
 | 1 | Project setup and deterministic synthetic-data generator | Complete |
 | 2 | Data cleaning, validation and SQLite pipeline | Complete |
-| 3 | Referral-leakage rules, SQL analytics and KPI reconciliation | Planned |
+| 3 | Referral-leakage rules, SQL analytics and KPI reconciliation | Complete |
 | 4 | Power BI data package, DAX measures, theme, build guide and dashboard | Planned |
 | 5 | Final testing, screenshots, documentation and GitHub QA | Planned |
 
@@ -302,7 +302,7 @@ no structural violations.
   returns no rows, `PRAGMA integrity_check` returns `ok`, and every table's row count
   matches its processed CSV.
 
-Phase 3 analytical views are not created yet.
+Phase 3 adds its analytical views to this database (see [Analytics (Phase 3)](#analytics-phase-3)).
 
 ### JSON report
 
@@ -328,6 +328,192 @@ CSVs and an identical JSON report. The database is rebuilt from scratch with ide
 table contents. Outputs use stable sort orders, UTF-8, `\n` line endings, and empty fields
 for missing values.
 
+## Analytics (Phase 3)
+
+Phase 3 adds the analytics layer that the Power BI dashboard will use later. It consists of
+SQL views in the Phase 2 database, automated KPI reconciliation, and deterministic CSV
+exports. Run it after Phase 2:
+
+```powershell
+.\.venv\Scripts\python.exe analyze_data.py
+```
+
+The script runs in this order:
+
+1. It checks that `data\output\healthcare_referrals.db` exists and that the last Phase 2
+   run succeeded. If either check fails, it stops with the commands to run first.
+2. It creates or refreshes the views from `sql\02_create_analytics_views.sql`. The script
+   only drops and recreates its own views and never changes the Phase 2 tables.
+3. It queries every view and runs 26 reconciliation checks.
+4. If every check passes, it writes the exports and `phase3_analytics_summary.json` to
+   `data\output`.
+
+If a check fails, the script exits with code 1, names the failed check, and writes a failed
+summary. The exports from the last successful run are left unchanged. A full run takes
+about 100 seconds on the standard dataset.
+
+### Leakage and conversion definitions
+
+Every definition is documented in [sql/KPI_DEFINITIONS.md](sql/KPI_DEFINITIONS.md) and is
+implemented exactly as documented in SQL. The definitions use the extract date
+(2026-01-31) and a 30-day follow-up window.
+
+- **Converted:** the referral has a completed appointment, **or** it was `Sent External`
+  with a confirmed external visit.
+- **Active / in progress:**
+  - the referral is not converted, **and**
+  - it has a future appointment, **or** its last open item is less than 30 days old
+    (not yet booked, awaiting rebooking, or awaiting an external outcome).
+- **Leaked:** the referral is neither converted nor active, and it matches one rule. The
+  first matching rule in priority order is its single `primary_leakage_reason`:
+  1. External Outcome Missing
+  2. Expired Before Completion
+  3. Cancelled Without Successful Rebooking (the last appointment was cancelled)
+  4. No-Show Without Successful Follow-Up (the last appointment was a no-show)
+  5. Declined Before Scheduling
+  6. Not Scheduled Within 30 Days
+- **Conversion Rate** and **Leakage Rate** both divide by total referrals. They are not
+  forced to add up to 100%, because active referrals are neither.
+
+**Referral-level vs appointment-level:**
+- Referral-level measures count each referral once. For example, `cancelled_referrals` is
+  the number of referrals with at least one cancellation.
+- Appointment-level measures count appointment rows and always have `appointment` in their
+  name, for example `cancelled_appointments` and `appointment_no_show_rate`.
+- Appointments are aggregated per referral before joining, so a referral with several
+  appointments is never counted twice.
+
+### SQL views
+
+| View | Description |
+| --- | --- |
+| `vw_referral_journey` | One row per referral, with:<ul><li>patient segment, service, facility and network status;</li><li>appointment summary;</li><li>turnaround days;</li><li>conversion, active, leakage and delay flags;</li><li>the primary leakage reason;</li><li>Phase 2 duplicate and data-quality counts.</li></ul> |
+| `vw_overall_kpis` | One row of overall referral-level and appointment-level KPIs |
+| `vw_referral_funnel` | Total → Contacted → Scheduled → Completed or Confirmed External Outcome, split into internal and external |
+| `vw_monthly_metrics`, `vw_service_category_metrics`, `vw_facility_metrics`, `vw_referral_source_metrics`, `vw_urgency_metrics`, `vw_insurance_metrics` | The same metric set for each group: counts, rates, delays, data-quality counts, and average and median turnaround |
+| `vw_leakage_reason_metrics` | Leaked referrals per reason in priority order, with share of leaked referrals and rate of all referrals |
+| `vw_turnaround_metrics` | Eligible count, average, median, minimum and maximum days per turnaround measure |
+| `vw_data_quality_metrics` | Phase 2 exceptions per issue type, with resolved, unresolved and affected-referral counts |
+| `vw_analysis_parameters`, `vw_leakage_reasons`, `vw_appointment_summary`, `vw_analysis_dimensions`, `vw_journey_by_dimension`, `vw_dimension_metrics` | Helper views |
+
+How the views behave:
+- **Grouped views:** all of them share one calculation in `vw_dimension_metrics`. Missing
+  categories are labelled `Unknown`, so each grouped view sums to the overall totals.
+- **NULL values:** a rate is NULL when its denominator is zero. A turnaround measure
+  ignores missing dates instead of treating them as zero.
+- **Medians:** these are computed in SQL from the frequency distribution, using a running
+  total over each whole-day value.
+
+### Exports
+
+All exports are written to `data\output` (ignored by Git). They use UTF-8, `\n` line endings
+and empty fields for NULL, and decimals have 6 places.
+
+| File | Rows (default run) |
+| --- | --- |
+| `referral_journey.csv` | 147,750 |
+| `overall_kpis.csv` | 1 |
+| `referral_funnel.csv` | 4 |
+| `monthly_metrics.csv` | 12 |
+| `service_category_metrics.csv` | 8 |
+| `facility_metrics.csv` | 12 |
+| `referral_source_metrics.csv` | 7 |
+| `urgency_metrics.csv` | 3 |
+| `insurance_metrics.csv` | 4 |
+| `leakage_reason_metrics.csv` | 6 |
+| `turnaround_metrics.csv` | 3 |
+| `data_quality_metrics.csv` | 6 |
+| `phase3_analytics_summary.json` | Overall KPIs, funnel, leakage reasons, turnaround and all reconciliation results; no timestamps |
+
+Rerunning on the same database produces byte-identical exports and summary.
+
+### Reconciliation checks
+
+The 26 checks confirm that:
+- **Journey grain:** the journey has one row per referral, and the totals match the
+  `referrals` table.
+- **Outcome flags:**
+  - no referral is both converted and leaked, both active and leaked, or both converted
+    and active;
+  - every leaked referral has exactly one reason, and no other referral has one;
+  - the leakage-reason counts and outcome categories add up;
+  - every leakage reason agrees with its condition: for example, "Not Scheduled Within 30
+    Days" requires zero appointments and `scheduled_flag = 0`;
+  - every non-converted referral with a future Scheduled appointment is active and never
+    leaked.
+- **Grouped totals:** every grouped view sums to the overall totals.
+- **Status and appointment counts:** these match the base tables.
+- **Rates:** every rate uses its documented numerator and denominator, and stays between
+  0 and 1.
+- **Turnaround:** averages and medians match an independent Python calculation over
+  nonmissing values.
+- **Phase 2 reconciliation:** duplicate and data-quality counts match the Phase 2 tables
+  and report.
+- **Funnel:** stages follow their definitions.
+- **Durations:** no duration is negative.
+- **Zero denominators:** rates return NULL rather than 0.
+- **Exports:** every export keeps its documented columns and sort order.
+
+### Seed-42 results
+
+These results describe the **synthetic** dataset generated with seed 42. They reflect the
+generator settings in `config.py`, not real healthcare performance.
+
+| KPI | Value |
+| --- | --- |
+| Total referrals | 147,750 |
+| Converted | 106,864 (72.3%): 97,197 completed internally and 9,667 confirmed externally |
+| Leaked | 38,594 (26.1%) |
+| Active / in progress | 2,292 (1.6%) |
+| Unclassified | 0 |
+| Scheduling rate | 73.5% |
+| Completion rate | 65.8% |
+| Referrals with a cancellation (referral-level) | 9,568 (6.5%) |
+| Referrals with a no-show (referral-level) | 9,959 (6.7%) |
+| Cancelled appointments (appointment-level) | 10,092 of 128,718 (7.8%) |
+| No-show appointments (appointment-level) | 10,528 of 128,718 (8.2%) |
+| Median / average days to first contact | 1 / 2.0 |
+| Median / average days to first booking | 5 / 8.4 |
+| Median / average days to first appointment | 21 / 27.1 |
+
+The active referrals are the 2,167 `Scheduled` referrals with future appointments, plus 125
+`Pending` referrals awaiting rebooking after a recent cancellation or no-show. The 2,167
+"Not Scheduled Within 30 Days" referrals are a different group: `Pending` referrals with no
+appointment at all. The two counts are equal by coincidence for seed 42; other seeds give
+different counts.
+
+| Leakage reason | Referrals | Share of leaked |
+| --- | --- | --- |
+| External Outcome Missing | 8,399 | 21.8% |
+| Expired Before Completion | 11,111 | 28.8% |
+| Cancelled Without Successful Rebooking | 3,942 | 10.2% |
+| No-Show Without Successful Follow-Up | 5,233 | 13.6% |
+| Declined Before Scheduling | 7,742 | 20.1% |
+| Not Scheduled Within 30 Days | 2,167 | 5.6% |
+
+Funnel: 147,750 total → 139,339 contacted (94.3%) → 108,664 scheduled (73.5%) → 106,864
+completed or confirmed externally (72.3%). Stage 4 includes 9,667 external referrals that
+skip internal scheduling.
+
+Observations from the synthetic data:
+
+- **Network status:** referrals to the two out-of-network facilities convert at about
+  53–54%, against 70–78% for in-network facilities. Their leakage comes mainly from
+  missing external outcomes.
+- **Service category:** leakage is highest in Behavioral Health (29.9%) and lowest in
+  General Surgery (23.4%).
+- **Referral source:** Emergency Department (30.6%), Patient Portal (29.2%) and Urgent Care
+  (28.9%) referrals leak more than Specialist (24.2%) and Primary Care (25.0%) referrals.
+- **Insurance:** Self-Pay referrals have the highest leakage rate (30.1%). Medicare
+  referrals have the lowest (24.9%).
+- **Urgency:** Stat referrals reach a first appointment faster than Routine ones (median 7
+  days against 26).
+- **Recent months:** December 2025 shows a lower conversion rate (57.3%) because 1,754 of
+  its referrals are still active at the extract date. This is the reason active referrals
+  are kept separate from leakage.
+- **Delayed appointments:** 58,388 referrals had a first appointment later than their
+  category's illustrative target. The targets and wait times are both synthetic settings.
+
 ## Testing
 
 ```powershell
@@ -350,6 +536,21 @@ The tests generate data in temporary folders and do not use files in `data\raw`.
   - SQLite tables, keys, indexes and constraints, and the foreign-key check;
   - byte-identical reruns;
   - a full run on the standard 150,000-row dataset.
+- **Phase 3 tests** use small hand-built databases to check:
+  - each leakage rule and the reason priority;
+  - converted, active and external outcomes;
+  - rebooked cancellations and no-shows followed by completion;
+  - rates, the funnel and grouped totals;
+  - averages and medians, with missing and negative durations;
+  - empty databases and zero denominators.
+
+  On generated data, they also check:
+  - the export columns, deterministic reruns and reconciliation with Phase 2;
+  - helpful errors, and that tampered data or wrong SQL logic fails without replacing
+    exports;
+  - a full generate → prepare → analyze run on the standard dataset.
+
+The complete suite takes about 4 minutes, mainly because of the three full-size runs.
 
 ## Repository structure
 
@@ -358,27 +559,41 @@ healthcare-referral-leakage-analytics/
 ├── config.py              # Settings: period, seed, categories, rates, paths
 ├── generate_data.py       # Phase 1: command-line synthetic data generator
 ├── prepare_data.py        # Phase 2: validation, cleaning and SQLite pipeline
+├── analyze_data.py        # Phase 3: analytical views, reconciliation and exports
 ├── requirements.txt       # Pinned Python dependencies
 ├── data/
 │   ├── raw/               # Generated raw CSV files (ignored by Git)
 │   ├── processed/         # Cleaned CSVs and data-quality exceptions (ignored by Git)
-│   └── output/            # SQLite database and JSON report (ignored by Git)
+│   └── output/            # Database, reports and analytical exports (ignored by Git)
 ├── sql/
-│   └── 01_create_schema.sql  # SQLite schema: tables, keys, checks and indexes
+│   ├── 01_create_schema.sql           # SQLite schema: tables, keys, checks and indexes
+│   ├── 02_create_analytics_views.sql  # Phase 3 analytical views
+│   └── KPI_DEFINITIONS.md             # KPI and leakage definitions
 ├── powerbi/               # Power BI files (Phase 4)
 ├── screenshots/           # Dashboard screenshots (Phase 5)
 └── tests/
     ├── conftest.py
     ├── test_generate_data.py
-    └── test_prepare_data.py
+    ├── test_prepare_data.py
+    └── test_analytics.py
 ```
 
 ## Current limitations
 
 - The data is synthetic. Distributions, rates and wait times are illustrative settings
   chosen for analysis practice and do not represent any real healthcare system.
-- Phases 1 and 2 are complete. Leakage rules, KPIs, analytical SQL views and the Power BI
-  dashboard are planned for later phases.
+- Phases 1–3 are complete. The Power BI dashboard (Phase 4) and final QA (Phase 5) are
+  planned; no dashboard exists yet.
+- The leakage rules are documented analytical conventions for this synthetic model. The
+  30-day follow-up window and the appointment targets are illustrative settings, not
+  clinical or contractual standards.
+- The schema has no referring provider or referring facility, so referrals are analysed by
+  receiving provider and facility and by referral source.
+- External referrals have no appointment detail. Their outcome is known only from a
+  confirmed-visit closure reason.
+- The grouped views recalculate from the referral journey each time they are queried
+  (about 12 seconds each on the full dataset), so `analyze_data.py` takes about 100
+  seconds.
 - Phase 2 validation is strict and tailored to this synthetic schema. Unexpected columns,
   values or date formats stop the run rather than being guessed at.
 - Missing first-contact and closed dates are flagged but never filled in, so time-based
