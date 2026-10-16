@@ -1,0 +1,155 @@
+// =====================================================================================
+// Healthcare Referral Leakage Analytics - DAX measures (Phase 4A)
+// SYNTHETIC DATA ONLY. Nothing here describes real patients, providers or facilities.
+// Portfolio and educational use only; not for clinical decision-making.
+//
+// How to add a measure in Power BI Desktop:
+//   1. Select the "Home table" named in the section heading in the Data pane.
+//   2. Home > New measure. Delete the placeholder text.
+//   3. Paste the measure: the name line and the expression lines below it.
+//   4. Measure tools > Format: choose the format in the "// Format:" line above it.
+//
+// Definitions match Phase 3 (sql/KPI_DEFINITIONS.md). The Referrals table has exactly
+// one row per referral, so COUNTROWS ( Referrals ) counts referrals, never appointments.
+// The flags in Referrals were calculated by the Phase 3 SQL views; these measures only
+// count them, so every slicer gives the same answer as SQL for the same selection.
+// Every rate uses DIVIDE, which returns BLANK (not an error) when the denominator is 0.
+//
+// Table names (rename the queries to these when importing the CSV files):
+//   Referrals, DataQualityExceptions, ServiceCategories, Facilities, Providers, Date
+// "Date" needs single quotes in DAX: 'Date'[date].
+// 20 measures: 13 counts, 4 rates, 3 turnaround medians.
+// =====================================================================================
+
+
+// -------------------------------------------------------------------------------------
+// 1. Referral counts                                              Home table: Referrals
+// -------------------------------------------------------------------------------------
+
+// Total Referrals: every processed referral (one row per referral_id).
+// Format: Whole number, thousands separator (#,0)
+Total Referrals =
+COUNTROWS ( Referrals )
+
+// Scheduled Referrals: referrals with at least one appointment record (scheduled_flag).
+// Format: Whole number, thousands separator (#,0)
+Scheduled Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[scheduled_flag] = 1 )
+
+// Completed Referrals: referrals with at least one Completed appointment (completed_flag).
+// Format: Whole number, thousands separator (#,0)
+Completed Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[completed_flag] = 1 )
+
+// Converted Referrals: completed internally OR confirmed external visit (converted_flag).
+// Format: Whole number, thousands separator (#,0)
+Converted Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[converted_flag] = 1 )
+
+// Leaked Referrals: not converted, not active, and matching one leakage rule (leakage_flag).
+// Format: Whole number, thousands separator (#,0)
+Leaked Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[leakage_flag] = 1 )
+
+// Active Referrals: not converted and still legitimately open at the extract date (active_flag).
+// Format: Whole number, thousands separator (#,0)
+Active Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[active_flag] = 1 )
+
+// Referrals with Cancellation: referrals with at least one Cancelled appointment (referral-level).
+// Format: Whole number, thousands separator (#,0)
+Referrals with Cancellation =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[had_cancellation_flag] = 1 )
+
+// Referrals with No Show: referrals with at least one No-Show appointment (referral-level).
+// Format: Whole number, thousands separator (#,0)
+Referrals with No Show =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[had_no_show_flag] = 1 )
+
+// Delayed Scheduling Referrals: first booking more than 30 days after the referral date.
+// Format: Whole number, thousands separator (#,0)
+Delayed Scheduling Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[delayed_scheduling_flag] = 1 )
+
+// Delayed Appointment Referrals: first appointment later than the service category target.
+// Format: Whole number, thousands separator (#,0)
+Delayed Appointment Referrals =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[delayed_appointment_flag] = 1 )
+
+// Referrals with Data Quality Issues: referrals linked to at least one Phase 2 exception.
+// Format: Whole number, thousands separator (#,0)
+Referrals with Data Quality Issues =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[has_data_quality_issue] = 1 )
+
+// Referrals with Duplicate Records: referrals that had duplicate raw rows removed in Phase 2.
+// Format: Whole number, thousands separator (#,0)
+Referrals with Duplicate Records =
+CALCULATE ( COUNTROWS ( Referrals ), Referrals[duplicate_record_count] > 0 )
+
+
+// -------------------------------------------------------------------------------------
+// 2. Data-quality exceptions                          Home table: DataQualityExceptions
+// -------------------------------------------------------------------------------------
+
+// Data Quality Exceptions: Phase 2 exception rows (one per detected issue). Filtered
+// through the Referrals relationship, so slicers on referrals also apply here.
+// Format: Whole number, thousands separator (#,0)
+Data Quality Exceptions =
+COUNTROWS ( DataQualityExceptions )
+
+
+// -------------------------------------------------------------------------------------
+// 3. Rates (all divide by Total Referrals)                        Home table: Referrals
+// -------------------------------------------------------------------------------------
+
+// Conversion Rate: Converted Referrals / Total Referrals.
+// Format: Percentage, 1 decimal place (0.0%)
+Conversion Rate =
+DIVIDE ( [Converted Referrals], [Total Referrals] )
+
+// Leakage Rate: Leaked Referrals / Total Referrals. Not 1 - Conversion Rate, because
+// active referrals are neither converted nor leaked.
+// Format: Percentage, 1 decimal place (0.0%)
+Leakage Rate =
+DIVIDE ( [Leaked Referrals], [Total Referrals] )
+
+// Scheduling Rate: Scheduled Referrals / Total Referrals.
+// Format: Percentage, 1 decimal place (0.0%)
+Scheduling Rate =
+DIVIDE ( [Scheduled Referrals], [Total Referrals] )
+
+// Completion Rate: Completed Referrals / Total Referrals.
+// Format: Percentage, 1 decimal place (0.0%)
+Completion Rate =
+DIVIDE ( [Completed Referrals], [Total Referrals] )
+
+
+// -------------------------------------------------------------------------------------
+// 4. Turnaround medians (blanks excluded)                         Home table: Referrals
+// -------------------------------------------------------------------------------------
+
+// Median Days to First Contact: median of nonblank days from referral to first contact.
+// Missing dates are blank in the snapshot and are excluded, never treated as 0.
+// Format: Decimal number, 1 decimal place (0.0)
+Median Days to First Contact =
+MEDIANX (
+    FILTER ( Referrals, NOT ISBLANK ( Referrals[days_to_first_contact] ) ),
+    Referrals[days_to_first_contact]
+)
+
+// Median Days to Schedule: median of nonblank days from referral to first booking.
+// Format: Decimal number, 1 decimal place (0.0)
+Median Days to Schedule =
+MEDIANX (
+    FILTER ( Referrals, NOT ISBLANK ( Referrals[days_to_schedule] ) ),
+    Referrals[days_to_schedule]
+)
+
+// Median Days to First Appointment: median of nonblank days from referral to the first
+// appointment date (the first slot booked, whatever its outcome).
+// Format: Decimal number, 1 decimal place (0.0)
+Median Days to First Appointment =
+MEDIANX (
+    FILTER ( Referrals, NOT ISBLANK ( Referrals[days_to_first_appointment] ) ),
+    Referrals[days_to_first_appointment]
+)

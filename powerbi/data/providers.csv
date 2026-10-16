@@ -1,0 +1,133 @@
+provider_id,provider_name,provider_type,facility_id,service_category_id
+PRV001,Cardiology Provider 001,Physician,FAC001,SVC001
+PRV002,Cardiology Provider 002,Advanced Practice Provider,FAC001,SVC001
+PRV003,Orthopedics Provider 003,Physician,FAC001,SVC002
+PRV004,Orthopedics Provider 004,Physician,FAC001,SVC002
+PRV005,Orthopedics Provider 005,Advanced Practice Provider,FAC001,SVC002
+PRV006,Orthopedics Provider 006,Advanced Practice Provider,FAC001,SVC002
+PRV007,Orthopedics Provider 007,Advanced Practice Provider,FAC001,SVC002
+PRV008,Neurology Provider 008,Physician,FAC001,SVC003
+PRV009,Neurology Provider 009,Physician,FAC001,SVC003
+PRV010,Neurology Provider 010,Advanced Practice Provider,FAC001,SVC003
+PRV011,Neurology Provider 011,Physician,FAC001,SVC003
+PRV012,Gastroenterology Provider 012,Advanced Practice Provider,FAC001,SVC004
+PRV013,Gastroenterology Provider 013,Physician,FAC001,SVC004
+PRV014,Dermatology Provider 014,Physician,FAC001,SVC005
+PRV015,Dermatology Provider 015,Physician,FAC001,SVC005
+PRV016,Dermatology Provider 016,Advanced Practice Provider,FAC001,SVC005
+PRV017,Physical Therapy Provider 017,Therapist,FAC001,SVC006
+PRV018,Physical Therapy Provider 018,Therapist,FAC001,SVC006
+PRV019,Behavioral Health Provider 019,Therapist,FAC001,SVC007
+PRV020,Behavioral Health Provider 020,Therapist,FAC001,SVC007
+PRV021,Behavioral Health Provider 021,Therapist,FAC001,SVC007
+PRV022,Behavioral Health Provider 022,Physician,FAC001,SVC007
+PRV023,General Surgery Provider 023,Physician,FAC001,SVC008
+PRV024,General Surgery Provider 024,Physician,FAC001,SVC008
+PRV025,General Surgery Provider 025,Physician,FAC001,SVC008
+PRV026,Cardiology Provider 026,Physician,FAC002,SVC001
+PRV027,Cardiology Provider 027,Advanced Practice Provider,FAC002,SVC001
+PRV028,Cardiology Provider 028,Physician,FAC002,SVC001
+PRV029,Cardiology Provider 029,Physician,FAC002,SVC001
+PRV030,Orthopedics Provider 030,Physician,FAC002,SVC002
+PRV031,Orthopedics Provider 031,Physician,FAC002,SVC002
+PRV032,Orthopedics Provider 032,Physician,FAC002,SVC002
+PRV033,Orthopedics Provider 033,Physician,FAC002,SVC002
+PRV034,Gastroenterology Provider 034,Physician,FAC002,SVC004
+PRV035,Gastroenterology Provider 035,Physician,FAC002,SVC004
+PRV036,Gastroenterology Provider 036,Advanced Practice Provider,FAC002,SVC004
+PRV037,Physical Therapy Provider 037,Therapist,FAC002,SVC006
+PRV038,Physical Therapy Provider 038,Therapist,FAC002,SVC006
+PRV039,General Surgery Provider 039,Physician,FAC002,SVC008
+PRV040,General Surgery Provider 040,Physician,FAC002,SVC008
+PRV041,General Surgery Provider 041,Physician,FAC002,SVC008
+PRV042,General Surgery Provider 042,Physician,FAC002,SVC008
+PRV043,General Surgery Provider 043,Physician,FAC002,SVC008
+PRV044,Cardiology Provider 044,Physician,FAC003,SVC001
+PRV045,Cardiology Provider 045,Physician,FAC003,SVC001
+PRV046,Cardiology Provider 046,Advanced Practice Provider,FAC003,SVC001
+PRV047,Cardiology Provider 047,Physician,FAC003,SVC001
+PRV048,Cardiology Provider 048,Physician,FAC003,SVC001
+PRV049,Orthopedics Provider 049,Physician,FAC004,SVC002
+PRV050,Orthopedics Provider 050,Physician,FAC004,SVC002
+PRV051,Orthopedics Provider 051,Physician,FAC004,SVC002
+PRV052,Physical Therapy Provider 052,Therapist,FAC004,SVC006
+PRV053,Physical Therapy Provider 053,Therapist,FAC004,SVC006
+PRV054,Physical Therapy Provider 054,Therapist,FAC004,SVC006
+PRV055,Physical Therapy Provider 055,Therapist,FAC004,SVC006
+PRV056,Physical Therapy Provider 056,Therapist,FAC004,SVC006
+PRV057,General Surgery Provider 057,Physician,FAC004,SVC008
+PRV058,General Surgery Provider 058,Physician,FAC004,SVC008
+PRV059,General Surgery Provider 059,Physician,FAC004,SVC008
+PRV060,General Surgery Provider 060,Physician,FAC004,SVC008
+PRV061,Neurology Provider 061,Physician,FAC005,SVC003
+PRV062,Neurology Provider 062,Physician,FAC005,SVC003
+PRV063,Neurology Provider 063,Physician,FAC005,SVC003
+PRV064,Neurology Provider 064,Advanced Practice Provider,FAC005,SVC003
+PRV065,Gastroenterology Provider 065,Physician,FAC006,SVC004
+PRV066,Gastroenterology Provider 066,Physician,FAC006,SVC004
+PRV067,General Surgery Provider 067,Physician,FAC006,SVC008
+PRV068,General Surgery Provider 068,Physician,FAC006,SVC008
+PRV069,Dermatology Provider 069,Advanced Practice Provider,FAC007,SVC005
+PRV070,Dermatology Provider 070,Advanced Practice Provider,FAC007,SVC005
+PRV071,Physical Therapy Provider 071,Therapist,FAC008,SVC006
+PRV072,Physical Therapy Provider 072,Therapist,FAC008,SVC006
+PRV073,Physical Therapy Provider 073,Therapist,FAC008,SVC006
+PRV074,Physical Therapy Provider 074,Therapist,FAC008,SVC006
+PRV075,Behavioral Health Provider 075,Therapist,FAC009,SVC007
+PRV076,Behavioral Health Provider 076,Therapist,FAC009,SVC007
+PRV077,Cardiology Provider 077,Physician,FAC010,SVC001
+PRV078,Cardiology Provider 078,Physician,FAC010,SVC001
+PRV079,Neurology Provider 079,Physician,FAC010,SVC003
+PRV080,Neurology Provider 080,Physician,FAC010,SVC003
+PRV081,Neurology Provider 081,Physician,FAC010,SVC003
+PRV082,Neurology Provider 082,Physician,FAC010,SVC003
+PRV083,Neurology Provider 083,Physician,FAC010,SVC003
+PRV084,Dermatology Provider 084,Physician,FAC010,SVC005
+PRV085,Dermatology Provider 085,Physician,FAC010,SVC005
+PRV086,Physical Therapy Provider 086,Therapist,FAC010,SVC006
+PRV087,Physical Therapy Provider 087,Therapist,FAC010,SVC006
+PRV088,Physical Therapy Provider 088,Therapist,FAC010,SVC006
+PRV089,Behavioral Health Provider 089,Physician,FAC010,SVC007
+PRV090,Behavioral Health Provider 090,Therapist,FAC010,SVC007
+PRV091,Cardiology Provider 091,Physician,FAC011,SVC001
+PRV092,Cardiology Provider 092,Physician,FAC011,SVC001
+PRV093,Cardiology Provider 093,Physician,FAC011,SVC001
+PRV094,Neurology Provider 094,Physician,FAC011,SVC003
+PRV095,Neurology Provider 095,Advanced Practice Provider,FAC011,SVC003
+PRV096,Neurology Provider 096,Physician,FAC011,SVC003
+PRV097,Neurology Provider 097,Physician,FAC011,SVC003
+PRV098,Neurology Provider 098,Physician,FAC011,SVC003
+PRV099,Gastroenterology Provider 099,Physician,FAC011,SVC004
+PRV100,Gastroenterology Provider 100,Advanced Practice Provider,FAC011,SVC004
+PRV101,Gastroenterology Provider 101,Physician,FAC011,SVC004
+PRV102,Gastroenterology Provider 102,Physician,FAC011,SVC004
+PRV103,Gastroenterology Provider 103,Physician,FAC011,SVC004
+PRV104,Dermatology Provider 104,Physician,FAC011,SVC005
+PRV105,Dermatology Provider 105,Physician,FAC011,SVC005
+PRV106,Dermatology Provider 106,Physician,FAC011,SVC005
+PRV107,Dermatology Provider 107,Physician,FAC011,SVC005
+PRV108,Behavioral Health Provider 108,Physician,FAC011,SVC007
+PRV109,Behavioral Health Provider 109,Therapist,FAC011,SVC007
+PRV110,Behavioral Health Provider 110,Therapist,FAC011,SVC007
+PRV111,Behavioral Health Provider 111,Physician,FAC011,SVC007
+PRV112,Behavioral Health Provider 112,Physician,FAC011,SVC007
+PRV113,Orthopedics Provider 113,Physician,FAC012,SVC002
+PRV114,Orthopedics Provider 114,Physician,FAC012,SVC002
+PRV115,Orthopedics Provider 115,Advanced Practice Provider,FAC012,SVC002
+PRV116,Gastroenterology Provider 116,Physician,FAC012,SVC004
+PRV117,Gastroenterology Provider 117,Physician,FAC012,SVC004
+PRV118,Gastroenterology Provider 118,Physician,FAC012,SVC004
+PRV119,Gastroenterology Provider 119,Advanced Practice Provider,FAC012,SVC004
+PRV120,Gastroenterology Provider 120,Physician,FAC012,SVC004
+PRV121,Physical Therapy Provider 121,Therapist,FAC012,SVC006
+PRV122,Physical Therapy Provider 122,Therapist,FAC012,SVC006
+PRV123,Physical Therapy Provider 123,Therapist,FAC012,SVC006
+PRV124,Physical Therapy Provider 124,Therapist,FAC012,SVC006
+PRV125,Behavioral Health Provider 125,Therapist,FAC012,SVC007
+PRV126,Behavioral Health Provider 126,Therapist,FAC012,SVC007
+PRV127,Behavioral Health Provider 127,Physician,FAC012,SVC007
+PRV128,General Surgery Provider 128,Physician,FAC012,SVC008
+PRV129,General Surgery Provider 129,Physician,FAC012,SVC008
+PRV130,General Surgery Provider 130,Physician,FAC012,SVC008
+PRV131,General Surgery Provider 131,Physician,FAC012,SVC008
+PRV132,General Surgery Provider 132,Physician,FAC012,SVC008

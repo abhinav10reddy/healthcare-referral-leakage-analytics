@@ -1,0 +1,608 @@
+{
+  "project": "Healthcare Referral Leakage Analytics",
+  "phase": "4A",
+  "synthetic_data": true,
+  "non_clinical_use": "All records are fully synthetic and fictional. They contain no real patient information and are for portfolio and educational use only, not for clinical decision-making.",
+  "source": "Phase 3 SQL views in the Phase 2 SQLite database (vw_overall_kpis, vw_leakage_reason_metrics, vw_referral_funnel, vw_dimension_metrics, vw_data_quality_metrics)",
+  "reporting_period": {
+    "start": "2025-01-01",
+    "end": "2025-12-31"
+  },
+  "extract_date": "2026-01-31",
+  "snapshot": {
+    "row_counts": {
+      "referral_journey.csv": 147750,
+      "data_quality_exceptions.csv": 11116,
+      "service_categories.csv": 8,
+      "facilities.csv": 12,
+      "providers.csv": 132,
+      "date.csv": 365
+    },
+    "date_table_range": {
+      "start": "2025-01-01",
+      "end": "2025-12-31"
+    }
+  },
+  "kpis": {
+    "total_referrals": {
+      "value": 147750,
+      "display": "147,750"
+    },
+    "scheduled_referrals": {
+      "value": 108664,
+      "display": "108,664"
+    },
+    "completed_referrals": {
+      "value": 97197,
+      "display": "97,197"
+    },
+    "converted_referrals": {
+      "value": 106864,
+      "display": "106,864"
+    },
+    "leaked_referrals": {
+      "value": 38594,
+      "display": "38,594"
+    },
+    "active_referrals": {
+      "value": 2292,
+      "display": "2,292"
+    },
+    "delayed_scheduling_referrals": {
+      "value": 6831,
+      "display": "6,831"
+    },
+    "delayed_appointment_referrals": {
+      "value": 58388,
+      "display": "58,388"
+    },
+    "cancelled_referrals": {
+      "value": 9568,
+      "display": "9,568"
+    },
+    "no_show_referrals": {
+      "value": 9959,
+      "display": "9,959"
+    },
+    "referrals_with_duplicates": {
+      "value": 2250,
+      "display": "2,250"
+    },
+    "referrals_with_data_quality_issues": {
+      "value": 10805,
+      "display": "10,805"
+    },
+    "data_quality_exceptions": {
+      "value": 11116,
+      "display": "11,116"
+    },
+    "conversion_rate": {
+      "value": 0.723276,
+      "display": "72.3%"
+    },
+    "leakage_rate": {
+      "value": 0.261212,
+      "display": "26.1%"
+    },
+    "scheduling_rate": {
+      "value": 0.735459,
+      "display": "73.5%"
+    },
+    "completion_rate": {
+      "value": 0.657848,
+      "display": "65.8%"
+    },
+    "median_days_to_first_contact": {
+      "value": 1.0,
+      "display": "1"
+    },
+    "median_days_to_schedule": {
+      "value": 5.0,
+      "display": "5"
+    },
+    "median_days_to_first_appointment": {
+      "value": 21.0,
+      "display": "21"
+    }
+  },
+  "outcomes": {
+    "Converted": 106864,
+    "Active": 2292,
+    "Leaked": 38594,
+    "Unclassified": 0
+  },
+  "leakage_reasons": [
+    {
+      "priority": 1,
+      "leakage_reason": "External Outcome Missing",
+      "leaked_referrals": 8399,
+      "share_of_leaked_referrals": 0.217625,
+      "rate_of_total_referrals": 0.056846
+    },
+    {
+      "priority": 2,
+      "leakage_reason": "Expired Before Completion",
+      "leaked_referrals": 11111,
+      "share_of_leaked_referrals": 0.287894,
+      "rate_of_total_referrals": 0.075201
+    },
+    {
+      "priority": 3,
+      "leakage_reason": "Cancelled Without Successful Rebooking",
+      "leaked_referrals": 3942,
+      "share_of_leaked_referrals": 0.10214,
+      "rate_of_total_referrals": 0.02668
+    },
+    {
+      "priority": 4,
+      "leakage_reason": "No-Show Without Successful Follow-Up",
+      "leaked_referrals": 5233,
+      "share_of_leaked_referrals": 0.135591,
+      "rate_of_total_referrals": 0.035418
+    },
+    {
+      "priority": 5,
+      "leakage_reason": "Declined Before Scheduling",
+      "leaked_referrals": 7742,
+      "share_of_leaked_referrals": 0.200601,
+      "rate_of_total_referrals": 0.052399
+    },
+    {
+      "priority": 6,
+      "leakage_reason": "Not Scheduled Within 30 Days",
+      "leaked_referrals": 2167,
+      "share_of_leaked_referrals": 0.056149,
+      "rate_of_total_referrals": 0.014667
+    }
+  ],
+  "referral_funnel": [
+    {
+      "stage_order": 1,
+      "stage": "Total Referrals",
+      "referrals": 147750,
+      "internal_referrals": 129684,
+      "external_referrals": 18066,
+      "share_of_total_referrals": 1.0
+    },
+    {
+      "stage_order": 2,
+      "stage": "Contacted",
+      "referrals": 139339,
+      "internal_referrals": 122360,
+      "external_referrals": 16979,
+      "share_of_total_referrals": 0.943073
+    },
+    {
+      "stage_order": 3,
+      "stage": "Scheduled",
+      "referrals": 108664,
+      "internal_referrals": 108664,
+      "external_referrals": 0,
+      "share_of_total_referrals": 0.735459
+    },
+    {
+      "stage_order": 4,
+      "stage": "Completed or Confirmed External Outcome",
+      "referrals": 106864,
+      "internal_referrals": 97197,
+      "external_referrals": 9667,
+      "share_of_total_referrals": 0.723276
+    }
+  ],
+  "by_month": [
+    {
+      "key": "2025-01",
+      "label": "2025-01",
+      "total_referrals": 13055,
+      "converted_referrals": 9670,
+      "leaked_referrals": 3385,
+      "conversion_rate": 0.740712,
+      "leakage_rate": 0.259288,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 623
+    },
+    {
+      "key": "2025-02",
+      "label": "2025-02",
+      "total_referrals": 11118,
+      "converted_referrals": 8198,
+      "leaked_referrals": 2920,
+      "conversion_rate": 0.737363,
+      "leakage_rate": 0.262637,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 504
+    },
+    {
+      "key": "2025-03",
+      "label": "2025-03",
+      "total_referrals": 12818,
+      "converted_referrals": 9454,
+      "leaked_referrals": 3364,
+      "conversion_rate": 0.737557,
+      "leakage_rate": 0.262443,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 611
+    },
+    {
+      "key": "2025-04",
+      "label": "2025-04",
+      "total_referrals": 12850,
+      "converted_referrals": 9557,
+      "leaked_referrals": 3293,
+      "conversion_rate": 0.743735,
+      "leakage_rate": 0.256265,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 606
+    },
+    {
+      "key": "2025-05",
+      "label": "2025-05",
+      "total_referrals": 12922,
+      "converted_referrals": 9578,
+      "leaked_referrals": 3344,
+      "conversion_rate": 0.741217,
+      "leakage_rate": 0.258783,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 608
+    },
+    {
+      "key": "2025-06",
+      "label": "2025-06",
+      "total_referrals": 11544,
+      "converted_referrals": 8509,
+      "leaked_referrals": 3034,
+      "conversion_rate": 0.737093,
+      "leakage_rate": 0.262821,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 539
+    },
+    {
+      "key": "2025-07",
+      "label": "2025-07",
+      "total_referrals": 12008,
+      "converted_referrals": 8854,
+      "leaked_referrals": 3154,
+      "conversion_rate": 0.737342,
+      "leakage_rate": 0.262658,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 587
+    },
+    {
+      "key": "2025-08",
+      "label": "2025-08",
+      "total_referrals": 11823,
+      "converted_referrals": 8750,
+      "leaked_referrals": 3072,
+      "conversion_rate": 0.740083,
+      "leakage_rate": 0.259833,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 555
+    },
+    {
+      "key": "2025-09",
+      "label": "2025-09",
+      "total_referrals": 12798,
+      "converted_referrals": 9457,
+      "leaked_referrals": 3320,
+      "conversion_rate": 0.738944,
+      "leakage_rate": 0.259416,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 596
+    },
+    {
+      "key": "2025-10",
+      "label": "2025-10",
+      "total_referrals": 13892,
+      "converted_referrals": 10202,
+      "leaked_referrals": 3596,
+      "conversion_rate": 0.734379,
+      "leakage_rate": 0.258854,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 666
+    },
+    {
+      "key": "2025-11",
+      "label": "2025-11",
+      "total_referrals": 11267,
+      "converted_referrals": 7962,
+      "leaked_referrals": 2884,
+      "conversion_rate": 0.706665,
+      "leakage_rate": 0.255969,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 550
+    },
+    {
+      "key": "2025-12",
+      "label": "2025-12",
+      "total_referrals": 11655,
+      "converted_referrals": 6673,
+      "leaked_referrals": 3228,
+      "conversion_rate": 0.572544,
+      "leakage_rate": 0.276963,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 386
+    }
+  ],
+  "by_service_category": [
+    {
+      "key": "SVC001",
+      "label": "Cardiology",
+      "total_referrals": 23684,
+      "converted_referrals": 17598,
+      "leaked_referrals": 5830,
+      "conversion_rate": 0.743033,
+      "leakage_rate": 0.246158,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1161
+    },
+    {
+      "key": "SVC002",
+      "label": "Orthopedics",
+      "total_referrals": 25124,
+      "converted_referrals": 18595,
+      "leaked_referrals": 6174,
+      "conversion_rate": 0.740129,
+      "leakage_rate": 0.245741,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1154
+    },
+    {
+      "key": "SVC003",
+      "label": "Neurology",
+      "total_referrals": 14728,
+      "converted_referrals": 10404,
+      "leaked_referrals": 3972,
+      "conversion_rate": 0.70641,
+      "leakage_rate": 0.26969,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 682
+    },
+    {
+      "key": "SVC004",
+      "label": "Gastroenterology",
+      "total_referrals": 16427,
+      "converted_referrals": 11950,
+      "leaked_referrals": 4169,
+      "conversion_rate": 0.727461,
+      "leakage_rate": 0.253789,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 761
+    },
+    {
+      "key": "SVC005",
+      "label": "Dermatology",
+      "total_referrals": 14745,
+      "converted_referrals": 10226,
+      "leaked_referrals": 4031,
+      "conversion_rate": 0.693523,
+      "leakage_rate": 0.273381,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 664
+    },
+    {
+      "key": "SVC006",
+      "label": "Physical Therapy",
+      "total_referrals": 22106,
+      "converted_referrals": 15968,
+      "leaked_referrals": 6025,
+      "conversion_rate": 0.722338,
+      "leakage_rate": 0.27255,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1058
+    },
+    {
+      "key": "SVC007",
+      "label": "Behavioral Health",
+      "total_referrals": 17772,
+      "converted_referrals": 12146,
+      "leaked_referrals": 5316,
+      "conversion_rate": 0.683435,
+      "leakage_rate": 0.299122,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 762
+    },
+    {
+      "key": "SVC008",
+      "label": "General Surgery",
+      "total_referrals": 13164,
+      "converted_referrals": 9977,
+      "leaked_referrals": 3077,
+      "conversion_rate": 0.7579,
+      "leakage_rate": 0.233744,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 589
+    }
+  ],
+  "by_referral_source": [
+    {
+      "key": "Emergency Department",
+      "label": "Emergency Department",
+      "total_referrals": 17355,
+      "converted_referrals": 11769,
+      "leaked_referrals": 5311,
+      "conversion_rate": 0.678133,
+      "leakage_rate": 0.306021,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 727
+    },
+    {
+      "key": "Hospital Discharge",
+      "label": "Hospital Discharge",
+      "total_referrals": 14556,
+      "converted_referrals": 10755,
+      "leaked_referrals": 3575,
+      "conversion_rate": 0.738871,
+      "leakage_rate": 0.245603,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 711
+    },
+    {
+      "key": "Patient Portal",
+      "label": "Patient Portal",
+      "total_referrals": 10313,
+      "converted_referrals": 7147,
+      "leaked_referrals": 3015,
+      "conversion_rate": 0.693009,
+      "leakage_rate": 0.292349,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 449
+    },
+    {
+      "key": "Primary Care",
+      "label": "Primary Care",
+      "total_referrals": 63366,
+      "converted_referrals": 46559,
+      "leaked_referrals": 15824,
+      "conversion_rate": 0.734763,
+      "leakage_rate": 0.249724,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 3025
+    },
+    {
+      "key": "Specialist",
+      "label": "Specialist",
+      "total_referrals": 26115,
+      "converted_referrals": 19372,
+      "leaked_referrals": 6324,
+      "conversion_rate": 0.741796,
+      "leakage_rate": 0.24216,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1195
+    },
+    {
+      "key": "Unknown",
+      "label": "Unknown",
+      "total_referrals": 2955,
+      "converted_referrals": 2154,
+      "leaked_referrals": 760,
+      "conversion_rate": 0.728934,
+      "leakage_rate": 0.257191,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 124
+    },
+    {
+      "key": "Urgent Care",
+      "label": "Urgent Care",
+      "total_referrals": 13090,
+      "converted_referrals": 9108,
+      "leaked_referrals": 3785,
+      "conversion_rate": 0.695798,
+      "leakage_rate": 0.289152,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 600
+    }
+  ],
+  "by_urgency": [
+    {
+      "key": "Routine",
+      "label": "Routine",
+      "total_referrals": 106383,
+      "converted_referrals": 76564,
+      "leaked_referrals": 27719,
+      "conversion_rate": 0.719701,
+      "leakage_rate": 0.260559,
+      "median_days_to_schedule": 6.0,
+      "delayed_scheduling_referrals": 5075
+    },
+    {
+      "key": "Stat",
+      "label": "Stat",
+      "total_referrals": 7297,
+      "converted_referrals": 5385,
+      "leaked_referrals": 1896,
+      "conversion_rate": 0.737975,
+      "leakage_rate": 0.259833,
+      "median_days_to_schedule": 3.0,
+      "delayed_scheduling_referrals": 289
+    },
+    {
+      "key": "Urgent",
+      "label": "Urgent",
+      "total_referrals": 34070,
+      "converted_referrals": 24915,
+      "leaked_referrals": 8979,
+      "conversion_rate": 0.731289,
+      "leakage_rate": 0.263546,
+      "median_days_to_schedule": 4.0,
+      "delayed_scheduling_referrals": 1467
+    }
+  ],
+  "by_insurance_type": [
+    {
+      "key": "Commercial",
+      "label": "Commercial",
+      "total_referrals": 70501,
+      "converted_referrals": 51214,
+      "leaked_referrals": 18169,
+      "conversion_rate": 0.726429,
+      "leakage_rate": 0.257713,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 3289
+    },
+    {
+      "key": "Medicaid",
+      "label": "Medicaid",
+      "total_referrals": 27146,
+      "converted_referrals": 19329,
+      "leaked_referrals": 7356,
+      "conversion_rate": 0.712039,
+      "leakage_rate": 0.270979,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1208
+    },
+    {
+      "key": "Medicare",
+      "label": "Medicare",
+      "total_referrals": 38441,
+      "converted_referrals": 28326,
+      "leaked_referrals": 9555,
+      "conversion_rate": 0.736869,
+      "leakage_rate": 0.248563,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 1807
+    },
+    {
+      "key": "Self-Pay",
+      "label": "Self-Pay",
+      "total_referrals": 11662,
+      "converted_referrals": 7995,
+      "leaked_referrals": 3514,
+      "conversion_rate": 0.68556,
+      "leakage_rate": 0.301321,
+      "median_days_to_schedule": 5.0,
+      "delayed_scheduling_referrals": 527
+    }
+  ],
+  "data_quality_by_issue_type": [
+    {
+      "issue_type": "duplicate_referral_record",
+      "issue_label": "Duplicate referral record",
+      "exceptions": 2250
+    },
+    {
+      "issue_type": "missing_referral_source",
+      "issue_label": "Missing referral source",
+      "exceptions": 2955
+    },
+    {
+      "issue_type": "missing_receiving_facility",
+      "issue_label": "Missing receiving facility",
+      "exceptions": 1478
+    },
+    {
+      "issue_type": "missing_first_contact_date",
+      "issue_label": "Missing first-contact date",
+      "exceptions": 2216
+    },
+    {
+      "issue_type": "missing_closed_date",
+      "issue_label": "Missing closed date",
+      "exceptions": 1478
+    },
+    {
+      "issue_type": "open_referral_with_closed_date",
+      "issue_label": "Open referral with closed date",
+      "exceptions": 739
+    }
+  ]
+}

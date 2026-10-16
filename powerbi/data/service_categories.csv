@@ -1,0 +1,9 @@
+service_category_id,service_category_name,service_line,target_days_to_appointment
+SVC001,Cardiology,Medical Specialty,21
+SVC002,Orthopedics,Surgical Specialty,21
+SVC003,Neurology,Medical Specialty,28
+SVC004,Gastroenterology,Medical Specialty,28
+SVC005,Dermatology,Medical Specialty,30
+SVC006,Physical Therapy,Rehabilitation,10
+SVC007,Behavioral Health,Behavioral Health,14
+SVC008,General Surgery,Surgical Specialty,21

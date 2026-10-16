@@ -43,7 +43,7 @@ service categories, facilities and patient segments. The project uses Python, Pa
 | 1 | Project setup and deterministic synthetic-data generator | Complete |
 | 2 | Data cleaning, validation and SQLite pipeline | Complete |
 | 3 | Referral-leakage rules, SQL analytics and KPI reconciliation | Complete |
-| 4 | Power BI data package, DAX measures, theme, build guide and dashboard | Planned |
+| 4 | Power BI data package, DAX measures, theme, build guide and dashboard | In progress: 4A (data package and specifications) complete; 4B (manual dashboard build) planned |
 | 5 | Final testing, screenshots, documentation and GitHub QA | Planned |
 
 ## Synthetic data model
@@ -514,6 +514,160 @@ Observations from the synthetic data:
 - **Delayed appointments:** 58,388 referrals had a first appointment later than their
   category's illustrative target. The targets and wait times are both synthetic settings.
 
+## Power BI data package (Phase 4A)
+
+Phase 4A prepares everything needed to build the dashboard in **Power BI Desktop**: a
+validated data snapshot, a model specification, the DAX measures, a theme, a step-by-step
+build guide and a verification checklist.
+
+> **The dashboard itself does not exist yet.** The `.pbix` report
+> (`powerbi/healthcare_referral_leakage_dashboard.pbix`) and its screenshots are created by
+> hand in Power BI Desktop in Phase 4B. No script in this project creates or edits a
+> `.pbix` file.
+
+### Snapshot command
+
+Run this after Phases 1–3:
+
+```powershell
+.\.venv\Scripts\python.exe prepare_powerbi_data.py
+```
+
+The script runs in this order:
+
+1. **Check the inputs.** It checks that the Phase 2 database exists, that the Phase 2
+   report passed, and that the Phase 3 analytics passed all reconciliation checks.
+2. **Refresh the views.** It refreshes the Phase 3 views.
+3. **Stage the snapshot.** It writes six CSV files and `powerbi/expected_kpis.json` to a
+   staging folder. Every expected value comes from the Phase 3 SQL views.
+4. **Validate.** It re-reads the staged files and runs 12 checks:
+   - columns and row counts (against SQLite);
+   - keys and relationships, formats and preserved blanks;
+   - exclusive outcome flags and leakage reasons;
+   - the Date table;
+   - KPIs recomputed from the CSV files;
+   - file sizes.
+5. **Publish.** Only if every check passes does it replace `powerbi/data/` and
+   `powerbi/expected_kpis.json`. A failed run leaves the previous snapshot unchanged.
+
+The run takes about 40 seconds, and rebuilding from the same database gives
+byte-identical files.
+
+### Snapshot files
+
+The snapshot files are tracked in Git, and every file stays below a 50 MB safety limit
+(GitHub's hard limit is 100 MB). `.gitattributes` keeps their LF line endings on
+checkout, so a cloned copy stays byte-identical to a rebuilt one. Sizes are for seed 42:
+
+| File (Power BI table) | Grain | Rows | Size |
+|---|---|---|---|
+| `referral_journey.csv` (Referrals) | referral | 147,750 | 24.0 MB |
+| `data_quality_exceptions.csv` (DataQualityExceptions) | data-quality exception | 11,116 | 1.2 MB |
+| `service_categories.csv` (ServiceCategories) | service category | 8 | < 1 KB |
+| `facilities.csv` (Facilities) | facility | 12 | 1 KB |
+| `providers.csv` (Providers) | provider | 132 | 8 KB |
+| `date.csv` (Date) | calendar day of 2025 | 365 | 24 KB |
+| **Total** | | | **25.3 MB** |
+
+All 147,750 processed referrals are included; none are sampled or removed. The Referrals
+file keeps:
+- referral, segment and status fields;
+- outcome and leakage fields;
+- the flags;
+- the first-contact, first-booking and first-appointment dates and their durations;
+- the data-quality counts.
+
+It omits the patient ID and every column the dashboard does not use. See
+[powerbi/DATA_DICTIONARY.md](powerbi/DATA_DICTIONARY.md).
+
+### Model summary
+
+- **Fact table:** Referrals, one row per referral, so counts are always at referral
+  grain.
+- **Relationships:** five one-to-many, single-direction relationships, with no
+  bidirectional or many-to-many links:
+  - `Date → Referrals`
+  - `Providers → Referrals`
+  - `ServiceCategories → Providers`
+  - `Facilities → Providers`
+  - `Referrals → DataQualityExceptions`
+- **Filtering through Providers:** Service Category and Facility reach referrals through
+  Providers. A Service Category selection therefore shortens the Provider slicer list,
+  without creating an ambiguous filter path.
+
+The full model is in [powerbi/POWER_BI_DATA_MODEL.md](powerbi/POWER_BI_DATA_MODEL.md),
+with a Mermaid diagram.
+
+### Dashboard plan
+
+The dashboard has three pages on a custom 1920 × 1080 (16:9) canvas, which is set
+manually in Power BI Desktop. They are built from 20 DAX measures in
+[powerbi/dax_measures.txt](powerbi/dax_measures.txt) (13 counts, 4 rates, 3 medians).
+Every rate uses `DIVIDE`.
+
+| Page | Slicers | Cards | Visuals |
+|---|---|---|---|
+| 1. Referral Overview | Provider, Service Category, Referral Date | Total Referrals, Converted Referrals, Conversion Rate, Leakage Rate, Median Days to Schedule, Median Days to First Appointment | Referrals by Outcome; Referrals by Service Category; Monthly Referral Volume; Service Category KPIs matrix |
+| 2. Leakage and Service Performance | Provider, Service Category, Referral Date | Leaked Referrals, Leakage Rate, Delayed Scheduling Referrals, Delayed Appointment Referrals | Leakage Rate by Provider; Leakage Rate by Service Category; Monthly Referrals versus Leaked Referrals; Provider Performance matrix |
+| 3. Turnaround Time and Data Quality | Referral Date, Service Category, Provider, Referral Source, Urgency | Active Referrals, Median Days to First Contact, Referrals with Data Quality Issues, Referrals with Duplicate Records | Leakage Reasons; Referrals by Referral Source; Conversion and Leakage Rate by Urgency; Data-Quality Exceptions by Issue Type; Referrals by Insurance Type |
+
+The build guide, [powerbi/POWER_BI_BUILD_GUIDE.md](powerbi/POWER_BI_BUILD_GUIDE.md), gives
+beginner-friendly manual steps, a wireframe and the visual positions for every page, and
+the expected unsliced values. The theme,
+[powerbi/healthcare_referral_theme.json](powerbi/healthcare_referral_theme.json), reuses
+the earlier portfolio dashboard's palette and layout. Outcome colors must be assigned
+manually:
+- Converted green;
+- Active blue;
+- Leaked red-orange;
+- Unclassified gray.
+
+### Expected KPI reference
+
+[powerbi/expected_kpis.json](powerbi/expected_kpis.json) holds the values the finished
+dashboard must show, all taken from the Phase 3 SQL views:
+- headline KPIs;
+- outcome counts;
+- leakage reasons;
+- funnel stages;
+- per-group totals for month, service category, referral source, urgency and insurance;
+- data-quality exceptions by issue type.
+
+Seed-42 headline values:
+
+| KPI | Value |
+|---|---|
+| Total Referrals | 147,750 |
+| Converted Referrals | 106,864 |
+| Conversion Rate | 72.3% |
+| Leaked Referrals | 38,594 |
+| Leakage Rate | 26.1% |
+| Active Referrals | 2,292 |
+| Scheduling Rate | 73.5% |
+| Completion Rate | 65.8% |
+| Delayed Scheduling Referrals | 6,831 |
+| Delayed Appointment Referrals | 58,388 |
+| Median days to first contact / schedule / first appointment | 1 / 5 / 21 |
+| Referrals with data-quality issues | 10,805 |
+| Duplicate rows removed | 2,250 |
+
+### Manual Power BI Desktop work (Phase 4B)
+
+[powerbi/POWER_BI_VERIFICATION_CHECKLIST.md](powerbi/POWER_BI_VERIFICATION_CHECKLIST.md)
+separates the automated file checks, which are already passing, from the manual checks.
+These steps are done by hand in Power BI Desktop:
+1. Import the CSV files and set the data types.
+2. Create the relationships, mark the Date table and turn off Auto date/time.
+3. Add the measures and import the theme.
+4. Set each page's canvas to a custom 1920 × 1080, build the three pages and assign the
+   status colors.
+5. Test the interactions.
+6. Save the `.pbix`.
+7. Take three screenshots:
+   - `screenshots/powerbi_referral_overview.png`
+   - `screenshots/powerbi_leakage_service_performance.png`
+   - `screenshots/powerbi_turnaround_data_quality.png`
+
 ## Testing
 
 ```powershell
@@ -549,6 +703,18 @@ The tests generate data in temporary folders and do not use files in `data\raw`.
   - helpful errors, and that tampered data or wrong SQL logic fails without replacing
     exports;
   - a full generate → prepare → analyze run on the standard dataset.
+- **Phase 4A tests** check:
+  - the tracked Power BI snapshot: exact columns, all 147,750 unique referrals, model
+    keys, formats, preserved blanks, exclusive outcomes and every validation check;
+  - the Date table: continuity, attributes, Monday = 1 numbering and sort columns;
+  - `expected_kpis.json` against the Phase 3 SQL and the verified seed-42 values;
+  - deterministic rebuilds, and that a failed validation keeps the previous snapshot;
+  - helpful errors;
+  - the DAX library: the 20 measures, `DIVIDE` for every rate, no `/`, format lines,
+    and that every column reference exists;
+  - the theme JSON;
+  - documentation consistency and the absence of content from the earlier project;
+  - that the Power BI assets are trackable and below the file-size limit.
 
 The complete suite takes about 4 minutes, mainly because of the three full-size runs.
 
@@ -560,6 +726,7 @@ healthcare-referral-leakage-analytics/
 ├── generate_data.py       # Phase 1: command-line synthetic data generator
 ├── prepare_data.py        # Phase 2: validation, cleaning and SQLite pipeline
 ├── analyze_data.py        # Phase 3: analytical views, reconciliation and exports
+├── prepare_powerbi_data.py  # Phase 4A: validated Power BI data snapshot
 ├── requirements.txt       # Pinned Python dependencies
 ├── data/
 │   ├── raw/               # Generated raw CSV files (ignored by Git)
@@ -569,21 +736,34 @@ healthcare-referral-leakage-analytics/
 │   ├── 01_create_schema.sql           # SQLite schema: tables, keys, checks and indexes
 │   ├── 02_create_analytics_views.sql  # Phase 3 analytical views
 │   └── KPI_DEFINITIONS.md             # KPI and leakage definitions
-├── powerbi/               # Power BI files (Phase 4)
-├── screenshots/           # Dashboard screenshots (Phase 5)
+├── powerbi/
+│   ├── data/                              # Tracked Power BI snapshot (six CSV files)
+│   ├── expected_kpis.json                 # Reference values from the Phase 3 SQL views
+│   ├── dax_measures.txt                   # 20 DAX measures
+│   ├── healthcare_referral_theme.json     # Power BI theme
+│   ├── DATA_DICTIONARY.md
+│   ├── POWER_BI_DATA_MODEL.md
+│   ├── POWER_BI_BUILD_GUIDE.md
+│   └── POWER_BI_VERIFICATION_CHECKLIST.md
+├── screenshots/           # Dashboard screenshots (Phase 4B; not created yet)
 └── tests/
     ├── conftest.py
     ├── test_generate_data.py
     ├── test_prepare_data.py
-    └── test_analytics.py
+    ├── test_analytics.py
+    └── test_powerbi_assets.py
 ```
 
 ## Current limitations
 
 - The data is synthetic. Distributions, rates and wait times are illustrative settings
   chosen for analysis practice and do not represent any real healthcare system.
-- Phases 1–3 are complete. The Power BI dashboard (Phase 4) and final QA (Phase 5) are
-  planned; no dashboard exists yet.
+- Phases 1–3 and Phase 4A are complete. The Power BI report (Phase 4B) and final QA
+  (Phase 5) are planned. No `.pbix` file or dashboard screenshot exists yet.
+- The Power BI snapshot is a tracked copy of generated data (about 25 MB). Each
+  regenerated snapshot adds to the Git history.
+- Python cannot open or check a `.pbix` file. Every report-level check in Phase 4B is
+  manual, following the verification checklist.
 - The leakage rules are documented analytical conventions for this synthetic model. The
   30-day follow-up window and the appointment targets are illustrative settings, not
   clinical or contractual standards.

@@ -1,0 +1,13 @@
+facility_id,facility_name,facility_type,region,network_status
+FAC001,Ambervale Regional Medical Center,Hospital,North,In-Network
+FAC002,Brightwater Community Hospital,Hospital,South,In-Network
+FAC003,Corrowind Heart and Vascular Clinic,Specialty Clinic,Central,In-Network
+FAC004,Dunmere Orthopedic and Spine Center,Specialty Clinic,East,In-Network
+FAC005,Elderglen Neurosciences Clinic,Specialty Clinic,West,In-Network
+FAC006,Fernhallow Digestive Health Center,Specialty Clinic,Central,In-Network
+FAC007,Glimmerton Skin and Wellness Clinic,Outpatient Center,East,In-Network
+FAC008,Hollowmere Rehabilitation Center,Rehabilitation Center,South,In-Network
+FAC009,Ivystone Behavioral Health Center,Behavioral Health Center,West,In-Network
+FAC010,Juniper Hollow Outpatient Center,Outpatient Center,North,In-Network
+FAC011,Kestrelmoor Independent Medical Group,Independent Practice,Central,Out-of-Network
+FAC012,Larkspur Valley Specialty Partners,Independent Practice,East,Out-of-Network

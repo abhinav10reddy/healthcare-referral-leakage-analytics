@@ -42,6 +42,27 @@ ANALYTICS_EXPORT_FILES = {
     "vw_data_quality_metrics": "data_quality_metrics.csv",
 }
 
+# Phase 4A Power BI snapshot (tracked in Git, unlike data/output)
+POWERBI_DIR = PROJECT_ROOT / "powerbi"
+POWERBI_DATA_DIR = POWERBI_DIR / "data"
+POWERBI_EXPECTED_KPIS_FILE = "expected_kpis.json"  # in POWERBI_DIR
+POWERBI_FILES = {
+    "Referrals": "referral_journey.csv",
+    "DataQualityExceptions": "data_quality_exceptions.csv",
+    "ServiceCategories": "service_categories.csv",
+    "Facilities": "facilities.csv",
+    "Providers": "providers.csv",
+    "Date": "date.csv",
+}
+POWERBI_PBIX_PATH = "powerbi/healthcare_referral_leakage_dashboard.pbix"  # created manually in Phase 4B
+POWERBI_SCREENSHOTS = [
+    "screenshots/powerbi_referral_overview.png",
+    "screenshots/powerbi_leakage_service_performance.png",
+    "screenshots/powerbi_turnaround_data_quality.png",
+]
+# GitHub rejects files over 100 MB and warns above 50 MB; keep every snapshot file below 50 MB.
+POWERBI_MAX_FILE_BYTES = 50 * 1024 * 1024
+
 # ---------------------------------------------------------------------------
 # Run settings
 # ---------------------------------------------------------------------------
