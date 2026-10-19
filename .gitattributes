@@ -2,3 +2,7 @@
 # writes (LF line endings), even when Git converts line endings on checkout.
 powerbi/data/*.csv text eol=lf
 powerbi/expected_kpis.json text eol=lf
+
+# The Power BI report and dashboard screenshots are binary: never convert or diff them.
+*.pbix binary
+*.png binary

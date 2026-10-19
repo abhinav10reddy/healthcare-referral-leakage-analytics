@@ -2,7 +2,8 @@
 
 > **Synthetic data only.** The dashboard shows computer-generated data. It does not
 > describe real patients, providers or facilities, and it is for portfolio and educational
-> use only, not for clinical decision-making. Put this notice on every page.
+> use only, not for clinical decision-making. The as-built pages carry no on-canvas
+> notice, so this notice is given in the README and in every Power BI document instead.
 
 This guide builds the dashboard **by hand in Power BI Desktop (Windows)** from the files
 prepared in Phase 4A. No Python script creates, opens or checks a `.pbix` file. The
@@ -21,8 +22,15 @@ following are all manual steps, recorded in
 - saving the report;
 - taking screenshots.
 
-**Status:** Phase 4A (this guide and its data) is complete. The report itself is built in
-Phase 4B. The `.pbix` file and the screenshots do not exist yet.
+**Status:** complete.
+- **Phase 4A:** this guide and its data.
+- **Phase 4B:** the report was built by hand in Power BI Desktop, following Steps 1–8.
+  The design is approved as final.
+- **Step 9 records the dashboard as built.** The page specifications describe the saved
+  `.pbix` and the three screenshots, which are the source of truth. Where the as-built
+  report differs from the original Phase 4A plan, the as-built version is documented.
+  The differences are listed in the
+  [verification checklist](POWER_BI_VERIFICATION_CHECKLIST.md#deviations-from-the-phase-4a-plan).
 
 | You will use | File |
 |---|---|
@@ -32,8 +40,8 @@ Phase 4B. The `.pbix` file and the screenshots do not exist yet.
 | DAX measures (20) | [dax_measures.txt](dax_measures.txt) |
 | Theme | [healthcare_referral_theme.json](healthcare_referral_theme.json) |
 | Reference values | [expected_kpis.json](expected_kpis.json) |
-| Report you will create (Phase 4B) | `powerbi/healthcare_referral_leakage_dashboard.pbix` |
-| Screenshots you will take (Phase 4B) | `screenshots/powerbi_referral_overview.png`, `screenshots/powerbi_leakage_service_performance.png`, `screenshots/powerbi_turnaround_data_quality.png` |
+| Report (built in Phase 4B) | `powerbi/healthcare_referral_leakage_dashboard.pbix` |
+| Screenshots (taken in Phase 4B) | `screenshots/powerbi_referral_overview.png`, `screenshots/powerbi_leakage_service_performance.png`, `screenshots/powerbi_turnaround_data_quality.png` |
 
 ## Step 0: Refresh the data files (optional)
 
@@ -185,22 +193,22 @@ The theme sets:
 - medium blue (`#2F6DB5`) as the first data color, so single-series charts are blue.
 
 A Power BI theme **cannot** link a category value, such as "Leaked", to a fixed color.
-It only supplies a palette in order. Set the outcome colors **manually** on each visual
-that uses `Referrals[outcome]`, under **Format visual > Visual > Columns / Bars / Slices >
-Colors**:
+It only supplies a palette, used in order. A color can be pinned to a category only
+**manually**, on each visual, under **Format visual > Visual > Columns / Bars / Slices >
+Colors**.
 
-| Outcome | Color | Hex |
-|---|---|---|
-| Converted | Green | `#2E7D4F` |
-| Active | Blue | `#2F6DB5` |
-| Leaked | Red-orange | `#C8553D` |
-| Unknown / Unclassified | Gray | `#8A939E` (no seed-42 referral is Unclassified) |
+**As built,** the report keeps the theme palette in order and has no per-category color
+overrides. The saved `.pbix` contains no color settings on any visual. The approved
+colors, as seen in the screenshots, are:
 
-Use the same pairing wherever both series appear, such as Conversion Rate and Leakage
-Rate, or Total Referrals and Leaked Referrals:
-- Conversion Rate: green;
-- Leakage Rate and Leaked Referrals: red-orange;
-- Total Referrals: blue.
+| Visual | Series → theme color |
+|---|---|
+| Referral Outcomes (donut, Page 1) | Active → blue `#2F6DB5`; Converted → teal `#1A8A7D`; Leaked → green `#2E7D4F` |
+| Referral Outcomes by Urgency (Page 3) | Converted Referrals → blue; Leaked Referrals → teal; Active Referrals → green |
+| Monthly Referrals vs Leakage (Page 2) | Total Referrals columns → blue; Leaked Referrals line → teal |
+| Turnaround Time by Service Category (Page 3) | Median Days to First Appointment columns → blue; First Contact line → teal; Schedule line → green |
+| Data Quality Resolution Status (Page 3) | Resolved → blue; Unresolved → teal |
+| Single-series bar and column charts | Blue |
 
 Color is never the only signal. Every chart also names its categories on an axis or in a
 legend.
@@ -227,92 +235,92 @@ Open [dax_measures.txt](dax_measures.txt) and add the 20 measures one at a time:
    Medians show `1.0`, `5.0` and `21.0`.
 3. Delete the page.
 
-## Step 9: Build the three report pages
+## Step 9: The three report pages (as built)
+
+These specifications describe the saved report. Positions are *x, y, width, height* in
+pixels on the 1920 × 1080 canvas, read from the saved `.pbix` and rounded to whole pixels.
+Set them under **Format > General > Properties**.
 
 ### Settings for every page
 
 - **Canvas: custom 1920 × 1080 px on every page.** This is the same canvas as the
   earlier portfolio dashboard, and it keeps the 16:9 aspect ratio.
   - **Set it by hand on each page.** Select an empty part of the canvas, then go to
-    **Format page > Canvas settings**, set **Type: Custom**, **Width: 1920** and
-    **Height: 1080**, and set **Vertical alignment: Top**.
+    **Format page > Canvas settings**, and set **Type: Custom**, **Width: 1920** and
+    **Height: 1080**.
   - **New pages start at the default 16:9 size,** so repeat this for all three pages.
   - **The theme file does not set page dimensions.** It controls only colors, text and
     visual styles.
-  - **View > Page view > Fit to page** shows the whole page while you build it.
-- **Positions:** the positions below are *x, y, width, height* in pixels on the
-  1920 × 1080 canvas. Set them under **Format > General > Properties**.
-- **Grid:**
-  - a 20 px margin on every side and 16 px between visuals;
-  - content runs from x = 20 to x = 1900 and from y = 20 to y = 1060;
-  - no visual overlaps another.
-- **Layout order (top to bottom):**
-  1. a full-width row of KPI cards (`y = 20`, height 140);
-  2. a row of slicers (`y = 176`, height 76);
-  3. the charts (`y = 268` to `y = 1016`);
-  4. a one-line notice at the bottom (`y = 1032`, height 28).
-- **Notice:** a text box at `20, 1032, 1880, 28` saying *"Synthetic data for a portfolio
-  project. Not real patients, providers or facilities. Not for clinical use."*
-- **Cards:** use the **Card** visual, with the category label on.
-- **Slicers:** each page's slicers filter only that page; do not sync slicers between
+  - **Page view:** the saved report uses **View > Page view > Fit to page**.
+- **Layout:**
+  - each page has a full-width row of KPI cards (`y = 0`, about 168 px high);
+  - a full-width row of slicers sits below the cards (`y ≈ 167`, 76 px high);
+  - the charts fill the rest of the page to the bottom edge;
+  - visuals tile edge to edge with no margins, as in the earlier dashboard.
+- **Overlaps:** manual placement leaves overlaps of at most 2 px between neighboring
+  frames. The exception is Page 2, where the two upper-right charts extend 15 px into the
+  top of the Provider Performance matrix's frame. The screenshot shows no visible overlap.
+- **No on-canvas notice:** the pages carry no synthetic-data text box. The notice is in
+  the README and in the Power BI documents.
+- **Cards:** these use the new **Card** visual (`cardVisual`), with the measure name as
+  the label.
+- **Slicers:** each page's slicers filter only that page; slicers are not synced between
   pages.
-  - **Provider:** a Dropdown on `Providers[provider_name]` with search on, because there
-    are 132 providers.
-  - **Service Category:** a Dropdown on `ServiceCategories[service_category_name]`.
-  - **Referral Date:** a *Between* slider on `Date[date]`.
-  - **Multiple selections:** Provider and Service Category allow multi-select, with
-    "Select all" on.
-- **Interactions:** keep the default **filter** interactions. Selecting a slicer value or
-  a bar filters the other visuals on the page.
-  - **Service Category filters Provider.** Selecting a category shortens the Provider
-    slicer list to that category's providers.
+  - **Dropdown slicers** are used for Provider, Facility, Service Category, Referral
+    Source and Urgency. Each header shows its field name.
+  - **Referral Date** is a *Between* slider on `Date[date]`.
+- **Interactions:** the default **filter** interactions are kept. Selecting a slicer
+  value or a data point filters the other visuals on the page.
+  - **Service Category and Facility filter Provider.** Both reach referrals through
+    Providers, so selecting either shortens the Provider slicer list.
   - **Selecting a provider does not shorten the category list.** This is expected with
     single-direction relationships.
-  - **The exceptions chart filters nothing else.** Clicking a bar in *Data-Quality
-    Exceptions by Issue Type* filters only that chart's table. Exception filters do not
-    flow back to referrals, by design.
-- **Visual titles:** under *Format visual > General > Title*, type the title shown in
-  the tables.
-- **Sorting:** set each sort from the visual's **More options (…) > Sort axis**.
-- **Matrix totals:** turn on **Row subtotals**. The Total row must match the cards.
+  - **Referral filters reach the exception visuals.** Slicers and selections on
+    referral fields filter the two data-quality exception visuals on Page 3, because
+    Referrals filters DataQualityExceptions.
+  - **Exception selections do not filter referral visuals.** Clicking a bar or slice in
+    the exception visuals filters only exception-based visuals, by design.
+- **Number and date display:** these follow the Windows regional settings of the
+  computer that renders the report. The saved screenshots use Indian digit grouping
+  (`1,47,750` = 147,750) and `DD-MM-YYYY` slicer dates. The values are unaffected.
+- **Matrix totals:** row subtotals are on, and the Total row matches the cards.
 
 ### Page 1: Referral Overview
 
 Canvas: custom 1920 × 1080. Wireframe (1920 × 1080):
 
 ```
-+--------+--------+--------+--------+--------+--------+
-| Total  |Convert-| Conv.  |Leakage | Median | Median |   KPI cards
-|Referral|  ed    |  Rate  |  Rate  |Days to |Days to |
-|        |        |        |        |Schedule|1st Appt|
-+--------+--------+--------+--------+--------+--------+
-| Provider v        | Service Category v | Date |----| |   slicers
-+-------------------+---------------------------------+
-| Referrals by      | Service Category KPIs (matrix)  |
-| Outcome (column)  +----------------+----------------+
-|                   | Referrals by   | Monthly        |
-|                   | Service        | Referral       |
-|                   | Category (bar) | Volume (line)  |
-+-------------------+----------------+----------------+
-| Synthetic-data notice                                |
-+-----------------------------------------------------+
++-------+-------+-------+-------+-------+-------+
+| Total |Conver-| Conv. |Leakage|Median |Median |   KPI cards
+|Referr.|  ted  | Rate  | Rate  |Days to|Days to|
+|       |       |       |       |Sched. |1st App|
++-------+-------+-------+-------+-------+-------+
+| Provider v    | Service Category v | Date |--| |   slicers
++-----------------------+-----------------------+
+| Monthly Referral      | Referrals by Service  |
+| Volume (line)         | Category (bar)        |
++---------------+-------+-----------------------+
+| Referral      | Service Category Performance  |
+| Outcomes      | (matrix)                      |
+| (donut)       |                               |
++---------------+-------------------------------+
 ```
 
 | # | Visual type | Fields / measures | Sort | Title | Position | Format and interaction |
 |---|---|---|---|---|---|---|
-| 1 | Card | Total Referrals | n/a | Total Referrals | 20, 20, 300, 140 | `#,0` |
-| 2 | Card | Converted Referrals | n/a | Converted Referrals | 336, 20, 300, 140 | `#,0` |
-| 3 | Card | Conversion Rate | n/a | Conversion Rate | 652, 20, 300, 140 | `0.0%` |
-| 4 | Card | Leakage Rate | n/a | Leakage Rate | 968, 20, 300, 140 | `0.0%` |
-| 5 | Card | Median Days to Schedule | n/a | Median Days to Schedule | 1284, 20, 300, 140 | `0.0` |
-| 6 | Card | Median Days to First Appointment | n/a | Median Days to First Appointment | 1600, 20, 300, 140 | `0.0` |
-| 7 | Slicer (Dropdown) | `Providers[provider_name]` | A–Z | Provider | 20, 176, 616, 76 | Search on; filtered by the Service Category slicer |
-| 8 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service Category | 652, 176, 616, 76 | Filters the Provider slicer |
-| 9 | Slicer (Between) | `Date[date]` | n/a | Referral Date | 1284, 176, 616, 76 | Date range 2025-01-01 to 2025-12-31 |
-| 10 | Clustered column chart | Y: Total Referrals; X: `Referrals[outcome]` | Total Referrals, descending | Referrals by Outcome | 20, 268, 616, 748 | Data labels `#,0`; outcome colors from Step 7 |
-| 11 | Matrix | Rows: `ServiceCategories[service_category_name]`; Values: Total Referrals, Conversion Rate, Leakage Rate, Median Days to Schedule, Delayed Scheduling Referrals | Total Referrals, descending | Service Category KPIs | 652, 268, 1248, 300 | Row subtotals on (Total row) |
-| 12 | Clustered bar chart | X: Total Referrals; Y: `ServiceCategories[service_category_name]` | Total Referrals, descending | Referrals by Service Category | 652, 584, 616, 432 | Data labels on; one color (blue) |
-| 13 | Line chart | Y: Total Referrals; X: `Date[year_month]` | `year_month`, ascending | Monthly Referral Volume | 1284, 584, 616, 432 | Markers on; Y axis starts at 0 |
+| 1 | Card | Total Referrals | n/a | Total Referrals | 0, 0, 327, 168 | `#,0` |
+| 2 | Card | Converted Referrals | n/a | Converted Referrals | 327, 0, 316, 168 | `#,0` |
+| 3 | Card | Conversion Rate | n/a | Conversion Rate | 644, 0, 316, 168 | `0.0%` |
+| 4 | Card | Leakage Rate | n/a | Leakage Rate | 960, 0, 316, 168 | `0.0%` |
+| 5 | Card | Median Days to Schedule | n/a | Median Days to Schedule | 1276, 0, 316, 168 | `0.0` |
+| 6 | Card | Median Days to First Appointment | n/a | Median Days to First Appointment | 1592, 0, 328, 168 | `0.0` |
+| 7 | Slicer (Dropdown) | `Providers[provider_name]` | A–Z | Provider | 0, 167, 643, 75 | Filtered by the Service Category slicer |
+| 8 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service category | 644, 167, 633, 76 | Filters the Provider slicer |
+| 9 | Slicer (Between) | `Date[date]` | n/a | (no header) | 1276, 168, 644, 76 | Date range 2025-01-01 to 2025-12-31 |
+| 10 | Line chart | X: `Date[year_month]`; Y: Total Referrals | `year_month`, ascending (by `year_month_sort`) | Monthly Referral Volume | 0, 242, 960, 404 | Smoothed line; the Y axis starts near the minimum (11K), not at 0 |
+| 11 | Clustered bar chart | Y: `ServiceCategories[service_category_name]`; X: Total Referrals | Total Referrals, descending | Referrals by Service Category | 960, 244, 960, 403 | One color (blue); X axis starts at 0 |
+| 12 | Donut chart | Legend: `Referrals[outcome]`; Values: Total Referrals | Total Referrals, descending | Referral Outcomes | 0, 647, 643, 433 | Detail labels show value and percent of total; the total (148K) is in the centre; theme palette colors from Step 7 |
+| 13 | Matrix | Rows: `ServiceCategories[service_category_name]`; Values: Total Referrals, Conversion Rate, Leakage Rate, Median Days to Schedule, Median Days to First Appointment | Service category, A–Z | (none; known as Service Category Performance) | 643, 647, 1277, 433 | Row subtotals on (Total row) |
 
 **Expected unsliced values (seed 42).** These cards must match `expected_kpis.json`:
 
@@ -329,8 +337,9 @@ With the `0.0` format, the median cards show one decimal place (5.0 and 21.0).
 
 The charts must show these values:
 
-- **Referrals by Outcome:** Converted 106,864; Leaked 38,594; Active 2,292. The total is
-  147,750. No Unclassified bar appears.
+- **Monthly Referral Volume:** the points match `by_month`, from 13,055 in January to
+  11,655 in December. October is the highest month, at 13,892, and February the lowest, at
+  11,118.
 - **Referrals by Service Category:**
 
   | Service category | Referrals |
@@ -344,46 +353,55 @@ The charts must show these values:
   | Neurology | 14,728 |
   | General Surgery | 13,164 |
 
-- **Service Category KPIs:** the rows match `by_service_category` in
-  `expected_kpis.json`. Leakage Rate runs from 23.4% (General Surgery) to 29.9%
-  (Behavioral Health). The Total row reads 147,750 / 72.3% / 26.1% / 5.0 / 6,831.
-- **Monthly Referral Volume:** the points match `by_month`, from 13,055 in January to
-  11,655 in December. October is the highest month, at 13,892.
+- **Referral Outcomes:** Converted 106,864 (72.33%), Leaked 38,594 (26.12%) and Active
+  2,292 (1.55%). The total is 147,750, and no Unclassified slice appears.
+- **Service Category Performance:**
 
-### Page 2: Leakage and Service Performance
+  | Service category | Referrals | Conversion | Leakage | Median days to schedule | Median days to first appointment |
+  |---|---|---|---|---|---|
+  | Behavioral Health | 17,772 | 68.3% | 29.9% | 5.0 | 24.0 |
+  | Cardiology | 23,684 | 74.3% | 24.6% | 5.0 | 20.0 |
+  | Dermatology | 14,745 | 69.4% | 27.3% | 5.0 | 33.0 |
+  | Gastroenterology | 16,427 | 72.7% | 25.4% | 5.0 | 26.0 |
+  | General Surgery | 13,164 | 75.8% | 23.4% | 5.0 | 20.0 |
+  | Neurology | 14,728 | 70.6% | 27.0% | 5.0 | 31.0 |
+  | Orthopedics | 25,124 | 74.0% | 24.6% | 5.0 | 23.0 |
+  | Physical Therapy | 22,106 | 72.2% | 27.3% | 5.0 | 13.0 |
+  | **Total** | **147,750** | **72.3%** | **26.1%** | **5.0** | **21.0** |
+
+### Page 2: Leakage & Service Performance
 
 Canvas: custom 1920 × 1080. Wireframe (1920 × 1080):
 
 ```
-+------------+------------+------------+------------+
-|  Leaked    |  Leakage   |  Delayed   |  Delayed   |   KPI cards
-| Referrals  |   Rate     | Scheduling |Appointment |
-+------------+------------+------------+------------+
-| Provider v        | Service Category v | Date |----| |   slicers
-+-------------------------+---------------------------+
-| Leakage Rate by         | Leakage Rate by           |
-| Provider (bar, top 15)  | Service Category (bar)    |
-+-------------------------+---------------------------+
-| Monthly Referrals vs    | Provider Performance      |
-| Leaked Referrals (combo)| (matrix)                  |
-+-------------------------+---------------------------+
-| Synthetic-data notice                                |
-+-----------------------------------------------------+
++-----------+-----------+-----------+-----------+
+|  Leaked   |  Leakage  |  Delayed  |  Delayed  |   KPI cards
+| Referrals |   Rate    |Scheduling |Appointment|
++-----------+-----------+-----------+-----------+
+| Facility v     | Service Category v | Urgency v |   slicers
++---------------+---------------+---------------+
+| Top 15        | Leakage Rate  | Monthly       |
+| Providers by  | by Service    | Referrals vs  |
+| Leaked        | Category (bar)| Leakage(combo)|
+| Referrals     +---------------+---------------+
+| (bar)         | Provider Performance (matrix) |
+|               |                               |
++---------------+-------------------------------+
 ```
 
 | # | Visual type | Fields / measures | Sort | Title | Position | Format and interaction |
 |---|---|---|---|---|---|---|
-| 1 | Card | Leaked Referrals | n/a | Leaked Referrals | 20, 20, 458, 140 | `#,0` |
-| 2 | Card | Leakage Rate | n/a | Leakage Rate | 494, 20, 458, 140 | `0.0%` |
-| 3 | Card | Delayed Scheduling Referrals | n/a | Delayed Scheduling Referrals | 968, 20, 458, 140 | `#,0` |
-| 4 | Card | Delayed Appointment Referrals | n/a | Delayed Appointment Referrals | 1442, 20, 458, 140 | `#,0` |
-| 5 | Slicer (Dropdown) | `Providers[provider_name]` | A–Z | Provider | 20, 176, 616, 76 | Same settings as Page 1 |
-| 6 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service Category | 652, 176, 616, 76 | Same settings as Page 1 |
-| 7 | Slicer (Between) | `Date[date]` | n/a | Referral Date | 1284, 176, 616, 76 | Same settings as Page 1 |
-| 8 | Clustered bar chart | X: Leakage Rate; Y: `Providers[provider_name]`; Tooltips: Total Referrals, Leaked Referrals | Leakage Rate, descending | Leakage Rate by Provider | 20, 268, 932, 400 | Data labels `0.0%`; X axis starts at 0; red-orange bars. Visual-level filter: **Top N = 15 by Leakage Rate**, for readability with 132 providers. The matrix lists all providers |
-| 9 | Clustered bar chart | X: Leakage Rate; Y: `ServiceCategories[service_category_name]`; Tooltips: Total Referrals, Leaked Referrals | Leakage Rate, descending | Leakage Rate by Service Category | 968, 268, 932, 400 | Data labels `0.0%`; X axis starts at 0; red-orange bars |
-| 10 | Line and clustered column chart | Column Y: Total Referrals; Line Y: Leaked Referrals; X: `Date[year_month]` | `year_month`, ascending | Monthly Referrals versus Leaked Referrals | 20, 684, 932, 332 | Legend on; turn **off** the secondary Y axis so both share one scale; columns blue, line red-orange |
-| 11 | Matrix | Rows: `Providers[provider_name]`; Values: Total Referrals, Converted Referrals, Leaked Referrals, Conversion Rate, Leakage Rate, Median Days to First Appointment | Leakage Rate, descending | Provider Performance | 968, 684, 932, 332 | Row subtotals on; 132 rows scroll; the Total row must match the cards |
+| 1 | Card | Leaked Referrals | n/a | Leaked Referrals | 0, 0, 485, 168 | `#,0` |
+| 2 | Card | Leakage Rate | n/a | Leakage Rate | 485, 0, 475, 168 | `0.0%` |
+| 3 | Card | Delayed Scheduling Referrals | n/a | Delayed Scheduling Referrals | 960, 0, 473, 167 | `#,0` |
+| 4 | Card | Delayed Appointment Referrals | n/a | Delayed Appointment Referrals | 1433, 0, 487, 167 | `#,0` |
+| 5 | Slicer (Dropdown) | `Facilities[facility_name]` | A–Z | Facility | 0, 167, 644, 76 | Filters Providers, and so every referral visual |
+| 6 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service category | 644, 167, 633, 76 | |
+| 7 | Slicer (Dropdown) | `Referrals[urgency]` | A–Z | Urgency | 1277, 169, 643, 76 | |
+| 8 | Clustered bar chart | Y: `Providers[provider_name]`; X: Leaked Referrals | Leaked Referrals, descending | Top 15 Providers by Leaked Referrals | 0, 243, 644, 837 | Visual-level filter: **Top N = 15 by Leaked Referrals**, for readability with 132 providers. The matrix lists all providers |
+| 9 | Clustered bar chart | Y: `ServiceCategories[service_category_name]`; X: Leakage Rate | Leakage Rate, descending | Leakage Rate by Service Category | 644, 243, 633, 419 | X axis `0%`–`30%`, starting at 0 |
+| 10 | Line and clustered column chart | X: `Date[year_month]`; Column Y: Total Referrals; Line Y: Leaked Referrals | `year_month`, ascending | Monthly Referrals vs Leakage | 1277, 243, 643, 419 | Legend on. The line uses a **secondary Y axis** (about 2,800–3,600), so the line's height is not on the column scale |
+| 11 | Matrix | Rows: `Providers[provider_name]` (header renamed *Provider Performance*); Values: Total Referrals, Leaked Referrals, Conversion Rate, Leakage Rate, Median Days to Schedule | Provider, A–Z | (none; the row header reads Provider Performance) | 643, 647, 1277, 433 | Row subtotals on; 132 rows scroll; the Total row must match the cards |
 
 **Expected unsliced values (seed 42):**
 
@@ -396,6 +414,27 @@ Canvas: custom 1920 × 1080. Wireframe (1920 × 1080):
 
 The charts must show these values:
 
+- **Top 15 Providers by Leaked Referrals**, in order:
+
+  | Provider | Leaked referrals |
+  |---|---|
+  | Behavioral Health Provider 075 | 709 |
+  | Behavioral Health Provider 076 | 698 |
+  | Behavioral Health Provider 089 | 653 |
+  | Behavioral Health Provider 090 | 653 |
+  | Cardiology Provider 001 | 641 |
+  | Cardiology Provider 002 | 598 |
+  | Cardiology Provider 077 | 595 |
+  | Cardiology Provider 078 | 595 |
+  | Gastroenterology Provider 066 | 594 |
+  | Gastroenterology Provider 013 | 563 |
+  | Physical Therapy Provider 018 | 562 |
+  | Orthopedics Provider 115 | 553 |
+  | Gastroenterology Provider 065 | 545 |
+  | Orthopedics Provider 049 | 541 |
+  | Orthopedics Provider 113 | 540 |
+
+  The 16th provider has 535, so no tie crosses the Top 15 cut-off.
 - **Leakage Rate by Service Category:**
 
   | Service category | Leakage rate |
@@ -409,156 +448,155 @@ The charts must show these values:
   | Orthopedics | 24.6% |
   | General Surgery | 23.4% |
 
-- **Monthly Referrals versus Leaked Referrals:** the values match the
-  `total_referrals` and `leaked_referrals` values under `by_month`. For example,
-  January is 13,055 / 3,385 and December is 11,655 / 3,228.
-- **Provider Performance:** the Total row reads 147,750 / 106,864 / 38,594 / 72.3% /
-  26.1% / 21.0.
+- **Monthly Referrals vs Leakage:** the values match the `total_referrals` and
+  `leaked_referrals` values under `by_month`. For example, January is 13,055 / 3,385,
+  October is 13,892 / 3,596 and December is 11,655 / 3,228.
+- **Provider Performance:**
+  - The Total row reads 147,750 / 38,594 / 72.3% / 26.1% / 5.0.
+  - The first rows, A–Z, are Behavioral Health Providers 019, 020, 021, 022, 075, 076,
+    089, 090 and 108. For example, Provider 019 reads 1,274 / 320 / 73.3% / 25.1% / 5.0.
+  - Behavioral Health Provider 108 works at an out-of-network facility, so its Median
+    Days to Schedule is blank, not 0.
 
-### Page 3: Turnaround Time and Data Quality
+### Page 3: Turnaround Time & Data Quality
 
 Canvas: custom 1920 × 1080. Wireframe (1920 × 1080):
 
 ```
-+------------+------------+------------+------------+
-|  Active    |Median Days |Referrals w/|Referrals w/|   KPI cards
-| Referrals  |to 1st Cont.| DQ Issues  | Duplicates |
-+------------+------------+------------+------------+
-| Date |---| | Service Cat v | Provider v | Source v | Urgency v |   slicers
-+-------------------------+---------------------------+
-| Leakage Reasons (bar)   | Conversion and Leakage    |
-|                         | Rate by Urgency (column)  |
-+----------------+--------+-------+-------------------+
-| Referrals by   | Data-Quality   | Referrals by      |
-| Referral Source| Exceptions by  | Insurance Type    |
-| (column)       | Issue Type(bar)| (pie)             |
-+----------------+----------------+-------------------+
-| Synthetic-data notice                                |
-+-----------------------------------------------------+
++-----------+-----------+-----------+-----------+
+|Median Days|Median Days|Referrals w|Data Qual. |   KPI cards
+|to 1st Con.|to Schedule| DQ Issues |Exceptions |
++-----------+-----------+-----------+-----------+
+| Date |-| | Service Cat v | Provider v | Source v | Urgency v |   slicers
++---------------+---------------+---------------+
+| Primary       | Referral      | Data Quality  |
+| Leakage       | Outcomes by   | Exceptions by |
+| Reasons       | Urgency (100% | Issue Type    |
+| (funnel)      | stacked col.) | (column)      |
++---------------+---------------+---------------+
+| Turnaround Time by Service    | Data Quality  |
+| Category (combo)              | Resolution    |
+|                               | Status (donut)|
++-------------------------------+---------------+
 ```
 
 | # | Visual type | Fields / measures | Sort | Title | Position | Format and interaction |
 |---|---|---|---|---|---|---|
-| 1 | Card | Active Referrals | n/a | Active Referrals | 20, 20, 458, 140 | `#,0` |
-| 2 | Card | Median Days to First Contact | n/a | Median Days to First Contact | 494, 20, 458, 140 | `0.0` |
-| 3 | Card | Referrals with Data Quality Issues | n/a | Referrals with Data Quality Issues | 968, 20, 458, 140 | `#,0` |
-| 4 | Card | Referrals with Duplicate Records | n/a | Referrals with Duplicate Records | 1442, 20, 458, 140 | `#,0` |
-| 5 | Slicer (Between) | `Date[date]` | n/a | Referral Date | 20, 176, 364, 76 | |
-| 6 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service Category | 400, 176, 363, 76 | Filters the Provider slicer |
-| 7 | Slicer (Dropdown) | `Providers[provider_name]` | A–Z | Provider | 779, 176, 363, 76 | Search on |
-| 8 | Slicer (Dropdown) | `Referrals[referral_source]` | A–Z | Referral Source | 1158, 176, 363, 76 | Includes *Unknown* (missing sources cleaned in Phase 2) |
-| 9 | Slicer (Dropdown) | `Referrals[urgency]` | A–Z | Urgency | 1537, 176, 363, 76 | |
-| 10 | Clustered bar chart | X: Leaked Referrals; Y: `Referrals[primary_leakage_reason]` | `primary_leakage_reason`, ascending (sorted by priority 1–6) | Leakage Reasons | 20, 268, 932, 370 | Data labels `#,0`; red-orange bars. Non-leaked referrals have a blank reason and no Leaked Referrals, so no "(Blank)" bar appears |
-| 11 | Clustered column chart | Y: Conversion Rate, Leakage Rate; X: `Referrals[urgency]` | Urgency A–Z | Conversion and Leakage Rate by Urgency | 968, 268, 932, 370 | Data labels `0.0%`; Conversion green, Leakage red-orange; legend on |
-| 12 | Clustered column chart | Y: Total Referrals; X: `Referrals[referral_source]` | Total Referrals, descending | Referrals by Referral Source | 20, 654, 616, 362 | Data labels on; blue |
-| 13 | Clustered bar chart | X: Data Quality Exceptions; Y: `DataQualityExceptions[issue_label]` | Data Quality Exceptions, descending | Data-Quality Exceptions by Issue Type | 652, 654, 616, 362 | Data labels `#,0`. Clicking a bar filters only this visual's table |
-| 14 | Pie chart | Values: Total Referrals; Legend: `Referrals[insurance_type]` | Total Referrals, descending | Referrals by Insurance Type | 1284, 654, 616, 362 | Detail labels: category and percent of total |
+| 1 | Card | Median Days to First Contact | n/a | Median Days to First Contact | 0, 0, 485, 168 | `0.0` |
+| 2 | Card | Median Days to Schedule | n/a | Median Days to Schedule | 485, 0, 475, 168 | `0.0` |
+| 3 | Card | Referrals with Data Quality Issues | n/a | Referrals with Data Quality Issues | 960, 0, 473, 167 | `#,0` |
+| 4 | Card | Data Quality Exceptions | n/a | Data Quality Exceptions | 1433, 0, 487, 167 | `#,0` |
+| 5 | Slicer (Between) | `Date[date]` | n/a | (no header) | 0, 167, 381, 76 | |
+| 6 | Slicer (Dropdown) | `ServiceCategories[service_category_name]` | A–Z | Service Category | 381, 167, 381, 76 | Filters the Provider slicer |
+| 7 | Slicer (Dropdown) | `Providers[provider_name]` | A–Z | Provider | 763, 169, 381, 76 | |
+| 8 | Slicer (Dropdown) | `Referrals[referral_source]` | A–Z | Referral Source | 1144, 167, 381, 76 | Includes *Unknown* (missing sources cleaned in Phase 2) |
+| 9 | Slicer (Dropdown) | `Referrals[urgency]` | A–Z | Urgency | 1526, 167, 394, 76 | |
+| 10 | Funnel | Category: `Referrals[primary_leakage_reason]`; Values: Leaked Referrals | Leaked Referrals, descending | Primary Leakage Reasons | 0, 244, 644, 496 | Data labels in thousands; the bottom label shows 19.5% of the top bar. Non-leaked referrals have a blank reason and no Leaked Referrals, so no "(Blank)" step appears |
+| 11 | 100% stacked column chart | X: `Referrals[urgency]`; Y: Converted Referrals, Leaked Referrals, Active Referrals | Converted Referrals, descending | Referral Outcomes by Urgency | 644, 243, 644, 497 | Data labels show each share to two decimals; legend on |
+| 12 | Clustered column chart | X: `DataQualityExceptions[issue_label]`; Y: Data Quality Exceptions | Data Quality Exceptions, descending | Data Quality Exceptions by Issue Type | 1289, 244, 631, 496 | One color (blue) |
+| 13 | Line and clustered column chart | X: `ServiceCategories[service_category_name]`; Column Y: Median Days to First Appointment; Line Y: Median Days to First Contact, Median Days to Schedule | Median Days to First Appointment, descending | Turnaround Time by Service Category | 0, 750, 1289, 330 | Data labels on; legend on |
+| 14 | Donut chart | Legend: `DataQualityExceptions[resolution_status]`; Values: Data Quality Exceptions | Data Quality Exceptions, descending | Data Quality Resolution Status | 1289, 750, 631, 330 | Detail labels show value and percent of total; the total (11K) is in the centre |
 
 **Expected unsliced values (seed 42):**
 
 | Card | Expected (seed 42) |
 |---|---|
-| Active Referrals | 2,292 |
 | Median Days to First Contact | 1 |
+| Median Days to Schedule | 5 |
 | Referrals with Data Quality Issues | 10,805 |
-| Referrals with Duplicate Records | 2,250 |
+| Data Quality Exceptions | 11,116 |
+
+The median cards show 1.0 and 5.0.
 
 The charts must show these values:
 
-- **Leakage Reasons, in priority order:**
+- **Primary Leakage Reasons, largest first:**
 
-  | Leakage reason | Referrals |
-  |---|---|
-  | External Outcome Missing | 8,399 |
-  | Expired Before Completion | 11,111 |
-  | Cancelled Without Successful Rebooking | 3,942 |
-  | No-Show Without Successful Follow-Up | 5,233 |
-  | Declined Before Scheduling | 7,742 |
-  | Not Scheduled Within 30 Days | 2,167 |
-  | **Total (matches Leaked Referrals)** | **38,594** |
-
-- **Conversion and Leakage Rate by Urgency:**
-
-  | Urgency | Conversion rate | Leakage rate |
+  | Leakage reason | Referrals | Priority |
   |---|---|---|
-  | Routine | 72.0% | 26.1% |
-  | Stat | 73.8% | 26.0% |
-  | Urgent | 73.1% | 26.4% |
+  | Expired Before Completion | 11,111 | 2 |
+  | External Outcome Missing | 8,399 | 1 |
+  | Declined Before Scheduling | 7,742 | 5 |
+  | No-Show Without Successful Follow-Up | 5,233 | 4 |
+  | Cancelled Without Successful Rebooking | 3,942 | 3 |
+  | Not Scheduled Within 30 Days | 2,167 | 6 |
+  | **Total (matches Leaked Referrals)** | **38,594** | |
 
-- **Referrals by Referral Source:**
+  The funnel is sorted by size, not by priority. The labels round to thousands (11K,
+  8K, 8K, 5K, 4K, 2K), and 2,167 is 19.5% of 11,111.
+- **Referral Outcomes by Urgency:**
 
-  | Referral source | Referrals |
-  |---|---|
-  | Primary Care | 63,366 |
-  | Specialist | 26,115 |
-  | Emergency Department | 17,355 |
-  | Hospital Discharge | 14,556 |
-  | Urgent Care | 13,090 |
-  | Patient Portal | 10,313 |
-  | Unknown | 2,955 |
+  | Urgency | Converted | Leaked | Active |
+  |---|---|---|---|
+  | Routine | 71.97% | 26.06% | 1.97% |
+  | Urgent | 73.13% | 26.35% | 0.52% |
+  | Stat | 73.80% | 25.98% | 0.22% |
 
-- **Data-Quality Exceptions by Issue Type:**
+  These round to the Conversion and Leakage Rates under `by_urgency` in
+  `expected_kpis.json`.
+- **Data Quality Exceptions by Issue Type:**
 
   | Issue type | Exceptions |
   |---|---|
   | Missing referral source | 2,955 |
   | Duplicate referral record | 2,250 |
   | Missing first-contact date | 2,216 |
-  | Missing receiving facility | 1,478 |
   | Missing closed date | 1,478 |
+  | Missing receiving facility | 1,478 |
   | Open referral with closed date | 739 |
   | **Total** | **11,116** |
 
-- **Referrals by Insurance Type:**
-
-  | Insurance type | Referrals |
-  |---|---|
-  | Commercial | 70,501 |
-  | Medicare | 38,441 |
-  | Medicaid | 27,146 |
-  | Self-Pay | 11,662 |
+- **Turnaround Time by Service Category:**
+  - the columns match the Median Days to First Appointment column of the Page 1 matrix,
+    from Dermatology (33.0) down to Physical Therapy (13.0);
+  - both lines are flat, at 1.0 (first contact) and 5.0 (schedule) for every category.
+- **Data Quality Resolution Status:** Unresolved 6,649 (59.81%) and Resolved 4,467
+  (40.19%), a total of 11,116.
 
 ## Step 10: Test the report
 
-Record each result in
-[POWER_BI_VERIFICATION_CHECKLIST.md](POWER_BI_VERIFICATION_CHECKLIST.md).
+These are the test steps for Power BI Desktop. The
+[verification checklist](POWER_BI_VERIFICATION_CHECKLIST.md) records which results
+have been verified, and how.
 
 1. **No slicer selections.** Every card matches `expected_kpis.json`, and every matrix
    Total row matches the cards.
 2. **Test every slicer** on every page. Pick one value, check that the visuals change,
    then clear it.
-3. **Service Category filters Provider.** Select *Cardiology*. The Provider slicer must
-   list only Cardiology providers, and the cards must show the Cardiology figures:
-   23,684 referrals, 74.3% conversion and 24.6% leakage.
-4. **Ordering.**
-   - Monthly axes run Jan 2025 → Dec 2025.
-   - Leakage reasons run in priority order 1 → 6.
-5. **Blank behavior.** On Page 2, select a provider at one of the two out-of-network
-   facilities.
-   - In the Provider Performance matrix, these are the providers whose Median Days to
-     First Appointment is blank.
+3. **Service Category filters Provider.** On Page 1, select *Cardiology*. The Provider
+   slicer must list only Cardiology providers, and the cards must show the Cardiology
+   figures: 23,684 referrals, 74.3% conversion and 24.6% leakage.
+4. **Facility filters through Providers.** On Page 2, select one facility. The cards and
+   all four charts change, and the Provider Performance matrix lists only that
+   facility's providers.
+5. **Ordering.** Monthly axes run Jan 2025 → Dec 2025.
+6. **Blank behavior.** Select an out-of-network provider, such as Behavioral Health
+   Provider 108.
    - External referrals have no internal appointments, so on Page 1 the Median Days to
-     Schedule and Median Days to First Appointment cards show "(Blank)" for that
-     provider, not 0. This is expected.
+     Schedule and Median Days to First Appointment cards show "(Blank)", not 0. This is
+     expected.
+   - In the Page 2 Provider Performance matrix, that provider's Median Days to Schedule
+     is blank.
    - No visual may show an error.
-6. **Conversion plus leakage.** With no filters, the two rates add up to 98.4%, not
+7. **Conversion plus leakage.** With no filters, the two rates add up to 98.4%, not
    100%. The remaining 1.6% is the 2,292 active referrals.
 
-## Step 11: Save and take screenshots (Phase 4B)
+## Step 11: Save and take screenshots (completed)
 
-1. Clear every slicer, then save the report as
+1. All slicers were cleared, and the report was saved as
    `powerbi/healthcare_referral_leakage_dashboard.pbix`.
-2. Take one full-page screenshot of each page with no slicer selections:
-   - first use **View > Fit to page**;
-   - capture with **Windows key + Shift + S** (Snipping Tool).
-3. Save the images as:
+2. One full-page screenshot was taken of each page with no slicer selections, using
+   **View > Fit to page**. The images are about 1,350 × 755 px, which is close to 16:9.
+3. The images are saved with lower-case `.png` extensions, because Git and GitHub treat
+   file names as case-sensitive:
    - `screenshots/powerbi_referral_overview.png`
    - `screenshots/powerbi_leakage_service_performance.png`
    - `screenshots/powerbi_turnaround_data_quality.png`
-4. Complete the verification checklist.
+4. The verification checklist has been completed.
 
-Only report the dashboard as complete once the `.pbix` file and the three screenshots
-exist and the checklist is complete.
+To retake a screenshot after a change, clear every slicer, use **View > Fit to page**,
+capture the page with **Windows key + Shift + S** (Snipping Tool), and save it under the
+same name.
 
 ## Design reused from the earlier portfolio dashboard
 
@@ -571,21 +609,15 @@ projects look consistent. No data, measures, values or report file were copied.
 - **Text:** Segoe UI and Segoe UI Semibold, at the same sizes (callout 24, titles 12,
   labels 10).
 - **Visual style:** white visuals on a `#F4F6F8` page, with no borders or shadows.
-- **Page size:** a custom 1920 × 1080 canvas (16:9), set manually on each page.
+- **Page size:** a custom 1920 × 1080 canvas (16:9), set manually on each page, with
+  Fit to page.
 - **Page structure:**
   - a full-width KPI card row at the top;
-  - a slicer row with two dropdowns on the left and a date-range slider on the right
-    (Pages 1–2);
-  - a five-slicer row on Page 3.
-- **Per-page layouts:**
-  - **Page 1:** a tall chart on the left, with a matrix above two charts on the right.
-  - **Page 2:** two bar charts above a monthly combo chart and a matrix.
-  - **Page 3:** two charts above three.
+  - a full-width slicer row below it;
+  - visuals tiled edge to edge below the slicers.
 
 **Adapted for this project:**
-- **Status colors:** these replace the earlier ones. Converted is green `#2E7D4F`, Active
-  is blue, Leaked is red-orange `#C8553D`, and Unclassified is gray `#8A939E`. The green
-  and red-orange are also the theme's `good` and `bad` colors.
-- **Content:** page titles, slicers (Provider, Service Category, Referral Date, Referral
-  Source, Urgency), all measures and all chart content are specific to referral leakage.
-- **Card counts:** Pages 2 and 3 use four cards and Page 1 uses six.
+- **Content:** page titles, slicers, all measures and all chart content are specific to
+  referral leakage.
+- **Card counts:** Page 1 uses six cards, and Pages 2 and 3 use four.
+- **Charts:** a donut and a funnel replace bar charts where they read more clearly.

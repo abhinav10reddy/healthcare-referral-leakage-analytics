@@ -83,10 +83,9 @@ does **not** repeat `service_category_id` or `facility_id` on Referrals. Instead
 - **The reverse does not happen.** Selecting a provider does not shorten the Service
   Category slicer list, because filters do not flow from Providers up to ServiceCategories.
   This is intended: it keeps every filter direction single and predictable.
-- **Facility is optional on the pages.** The planned pages use Provider and Service
-  Category slicers. A Facility slicer (`Facilities[facility_name]` or
-  `Facilities[network_status]`) can be added the same way and works through the same
-  chain.
+- **Facility works through the same chain.** The as-built Page 2 has a Facility slicer
+  on `Facilities[facility_name]`. It filters Providers, and Providers filter Referrals,
+  just as Service Category does.
 
 ### How ambiguity is avoided
 

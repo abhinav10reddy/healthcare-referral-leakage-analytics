@@ -1,11 +1,17 @@
-"""Phase 4A tests: Power BI snapshot, expected KPIs, DAX, theme and documentation."""
+"""Phase 4 tests: Power BI snapshot, expected KPIs, DAX, theme, documentation and report artifacts."""
 
+import fnmatch
 import hashlib
 import json
+import os
 import re
 import shutil
 import sqlite3
+import struct
 import subprocess
+import zipfile
+import zlib
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -57,11 +63,14 @@ CARDS = {  # build-guide card -> expected_kpis key
     "Median Days to Schedule": "median_days_to_schedule",
     "Median Days to First Appointment": "median_days_to_first_appointment",
     "Leaked Referrals": "leaked_referrals", "Delayed Scheduling Referrals": "delayed_scheduling_referrals",
-    "Delayed Appointment Referrals": "delayed_appointment_referrals", "Active Referrals": "active_referrals",
+    "Delayed Appointment Referrals": "delayed_appointment_referrals",
     "Median Days to First Contact": "median_days_to_first_contact",
     "Referrals with Data Quality Issues": "referrals_with_data_quality_issues",
-    "Referrals with Duplicate Records": "referrals_with_duplicates",
+    "Data Quality Exceptions": "data_quality_exceptions",
 }
+PAGE_NAMES = ["Referral Overview", "Leakage & Service Performance", "Turnaround Time & Data Quality"]
+PBIX = PROJECT_ROOT / config.POWERBI_PBIX_PATH
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 
 
 # ---------------------------------------------------------------------------
@@ -408,15 +417,14 @@ def test_relationships_are_documented():
 
 def test_three_pages_are_documented():
     guide = (POWERBI / "POWER_BI_BUILD_GUIDE.md").read_text(encoding="utf-8")
-    for page in ["Page 1: Referral Overview", "Page 2: Leakage and Service Performance",
-                 "Page 3: Turnaround Time and Data Quality"]:
-        assert f"### {page}" in guide
+    for number, page in enumerate(PAGE_NAMES, start=1):
+        assert f"### Page {number}: {page}" in guide
     assert guide.count("Wireframe") >= 3
 
 
-PAGE_HEADINGS = ["### Page 1: Referral Overview", "### Page 2: Leakage and Service Performance",
-                 "### Page 3: Turnaround Time and Data Quality", "## Step 10"]
-CANVAS_WIDTH, CANVAS_HEIGHT, MARGIN, GAP = 1920, 1080, 20, 16
+PAGE_HEADINGS = [f"### Page {n}: {page}" for n, page in enumerate(PAGE_NAMES, start=1)] + ["## Step 10"]
+CANVAS_WIDTH, CANVAS_HEIGHT = 1920, 1080
+MAX_FRAME_OVERLAP = 15  # as built: frames tile edge to edge; Page 2's upper charts overlap the matrix frame by 15 px
 
 
 def page_sections(guide):
@@ -444,21 +452,18 @@ def test_every_page_uses_a_1920_by_1080_canvas():
     assert not re.search(r"1920|1080|pageSize|canvas", json.dumps(theme), re.IGNORECASE)
 
 
-def test_documented_positions_fit_the_canvas_without_overlap():
+def test_documented_positions_fit_the_canvas_without_covering_visuals():
     guide = (POWERBI / "POWER_BI_BUILD_GUIDE.md").read_text(encoding="utf-8")
-    notice = tuple(map(int, re.search(r"text box at `(\d+), (\d+), (\d+), (\d+)`", guide).groups()))
     for section, visuals in zip(page_sections(guide), [13, 11, 14]):
         boxes = [tuple(map(int, m)) for m in re.findall(r"\| (\d+), (\d+), (\d+), (\d+) \|", section)]
         assert len(boxes) == visuals
-        boxes.append(notice)
         for x, y, w, h in boxes:
-            assert x >= MARGIN and y >= MARGIN, (x, y, w, h)
-            assert x + w <= CANVAS_WIDTH - MARGIN and y + h <= CANVAS_HEIGHT - MARGIN, (x, y, w, h)
+            assert w > 0 and h > 0 and x + w <= CANVAS_WIDTH and y + h <= CANVAS_HEIGHT, (x, y, w, h)
         for i, (ax, ay, aw, ah) in enumerate(boxes):
             for bx, by, bw, bh in boxes[i + 1:]:
-                apart = (ax + aw + GAP <= bx or bx + bw + GAP <= ax
-                         or ay + ah + GAP <= by or by + bh + GAP <= ay)
-                assert apart, ((ax, ay, aw, ah), (bx, by, bw, bh))
+                overlap_x = min(ax + aw, bx + bw) - max(ax, bx)
+                overlap_y = min(ay + ah, by + bh) - max(ay, by)
+                assert min(overlap_x, overlap_y) <= MAX_FRAME_OVERLAP, ((ax, ay, aw, ah), (bx, by, bw, bh))
 
 
 def test_card_values_in_guide_match_expected_kpis(expected):
@@ -489,6 +494,89 @@ def test_planned_pbix_and_screenshot_names():
             assert screenshot in text, (name, screenshot)
 
 
+def test_readme_marks_phase4_complete_and_embeds_the_screenshots():
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    assert re.search(r"^\| 4 \| .* \| Complete \|$", readme, re.MULTILINE)
+    for screenshot in config.POWERBI_SCREENSHOTS:
+        assert re.search(rf"!\[[^\]]+\]\({re.escape(screenshot)}\)", readme), screenshot
+
+
+# ---------------------------------------------------------------------------
+# Phase 4B report artifacts (built by hand in Power BI Desktop; only read here)
+# ---------------------------------------------------------------------------
+def repository_files(pattern):
+    skip = {".git", ".venv", "__pycache__", ".pytest_cache"}
+    found = []
+    for folder, subfolders, files in os.walk(PROJECT_ROOT):
+        subfolders[:] = [name for name in subfolders if name not in skip]
+        found += [Path(folder) / name for name in files if fnmatch.fnmatch(name.lower(), pattern)]
+    return found
+
+
+def pbix_pages():
+    with zipfile.ZipFile(PBIX) as package:
+        if "Report/definition/pages/pages.json" in package.namelist():  # enhanced report format (PBIR)
+            read = lambda name: json.loads(package.read(name).decode("utf-8-sig"))
+            order = read("Report/definition/pages/pages.json")["pageOrder"]
+            pages = [read(f"Report/definition/pages/{page}/page.json") for page in order]
+        else:  # legacy report layout
+            layout = json.loads(package.read("Report/Layout").decode("utf-16-le"))
+            pages = sorted(layout["sections"], key=lambda section: section.get("ordinal", 0))
+    return [(page["displayName"], page["width"], page["height"]) for page in pages]
+
+
+def png_chunks(path):
+    data = path.read_bytes()
+    assert data[:8] == PNG_SIGNATURE, path.name
+    position, chunks = 8, []
+    while position < len(data):
+        length, kind = struct.unpack(">I4s", data[position:position + 8])
+        body = data[position + 8:position + 8 + length]
+        (crc,) = struct.unpack(">I", data[position + 8 + length:position + 12 + length])
+        assert zlib.crc32(kind + body) == crc, (path.name, kind)
+        chunks.append((kind, body))
+        position += 12 + length
+        if kind == b"IEND":
+            break
+    assert position == len(data), f"{path.name} has bytes after IEND"
+    return chunks
+
+
+def test_pbix_exists_and_is_a_zip_package():
+    assert PBIX.is_file() and PBIX.stat().st_size > 0
+    with PBIX.open("rb") as handle:
+        assert handle.read(4) == b"PK\x03\x04"
+    with zipfile.ZipFile(PBIX) as package:
+        assert package.testzip() is None
+        assert "DataModel" in package.namelist()
+
+
+def test_exactly_one_pbix_outside_the_data_snapshot():
+    found = repository_files("*.pbix")
+    assert [path.relative_to(PROJECT_ROOT).as_posix() for path in found] == [config.POWERBI_PBIX_PATH]
+    assert not any(DATA in path.parents for path in found)
+
+
+def test_pbix_has_the_three_documented_1920_by_1080_pages():
+    assert pbix_pages() == [(name, CANVAS_WIDTH, CANVAS_HEIGHT) for name in PAGE_NAMES]
+
+
+def test_screenshots_exist_under_their_exact_names():
+    for screenshot in config.POWERBI_SCREENSHOTS:
+        path = PROJECT_ROOT / screenshot
+        assert path.name in os.listdir(path.parent), screenshot  # exact case, even on Windows
+
+
+def test_screenshots_are_complete_16_by_9_png_files():
+    for screenshot in config.POWERBI_SCREENSHOTS:
+        chunks = png_chunks(PROJECT_ROOT / screenshot)
+        kinds = [kind for kind, _ in chunks]
+        assert kinds[0] == b"IHDR" and b"IDAT" in kinds and kinds[-1] == b"IEND", screenshot
+        width, height = struct.unpack(">II", chunks[0][1][:8])
+        assert width >= 1000 and height >= 560, screenshot
+        assert abs(width / height - 16 / 9) < 0.02 * 16 / 9, (screenshot, width, height)
+
+
 # ---------------------------------------------------------------------------
 # Git and file sizes
 # ---------------------------------------------------------------------------
@@ -512,6 +600,21 @@ def test_powerbi_assets_are_trackable_and_outputs_ignored():
     for path in ["data/raw/referrals.csv", "data/processed/referrals.csv", "data/output/referral_journey.csv",
                  "data/output/healthcare_referrals.db", "data/output/phase3_analytics_summary.json"]:
         assert git_ignored(path), path
+
+
+@pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
+def test_git_sees_the_exact_report_artifact_names_as_binary():
+    paths = [config.POWERBI_PBIX_PATH, *config.POWERBI_SCREENSHOTS]
+    listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "--",
+                             "powerbi", "screenshots"], cwd=PROJECT_ROOT, capture_output=True, text=True)
+    attributes = subprocess.run(["git", "check-attr", "binary", "--", *paths], cwd=PROJECT_ROOT,
+                                capture_output=True, text=True)
+    if listed.returncode != 0 or attributes.returncode != 0:
+        pytest.skip("git ls-files or check-attr is not available")
+    for path in paths:
+        assert path in listed.stdout.splitlines(), path  # exact case, so links work on GitHub
+    for line in attributes.stdout.splitlines():
+        assert line.endswith(": binary: set"), line
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="git is not installed")
