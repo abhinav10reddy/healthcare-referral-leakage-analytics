@@ -409,14 +409,3 @@ healthcare-referral-leakage-analytics/
   3 MB) are tracked. Each regenerated snapshot or re-saved report adds to the Git
   history.
 
-## Project status
-
-All five phases are complete.
-
-| Phase | Scope | Status |
-| --- | --- | --- |
-| 1 | Deterministic synthetic data generator | Complete |
-| 2 | Validation, cleaning and SQLite pipeline | Complete |
-| 3 | Leakage rules, SQL analytics and KPI reconciliation | Complete |
-| 4 | Power BI data package, DAX measures and dashboard | Complete |
-| 5 | Final testing, documentation and repository review | Complete |
